@@ -3,17 +3,46 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     tools:context="com.gamepari.sootah.MainResultActivity" tools:ignore="MergeRootFrame">
 
-    <FrameLayout
-        android:id="@+id/container"
-        android:layout_width="match_parent"
-        android:layout_height="200dp">
-    </FrameLayout>
-
-    <fragment
-        android:layout_below="@id/container"
-        android:id="@+id/map"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:name="com.google.android.gms.maps.SupportMapFragment"/>
+        android:orientation="vertical"
+        android:id="@+id/capture_area">
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="200dp">
+        </FrameLayout>
+
+        <fragment
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:name="com.google.android.gms.maps.SupportMapFragment"/>
+
+    </LinearLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="gallery"
+        android:id="@+id/gallery"/>
+
+    <Button
+        android:layout_toRightOf="@id/gallery"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/camera"
+        android:text="camera"/>
+
+    <Button
+        android:layout_toRightOf="@id/camera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/share"
+        android:text="share"/>
+
+
 
 </RelativeLayout>
