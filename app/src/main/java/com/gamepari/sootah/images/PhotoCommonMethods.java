@@ -92,7 +92,7 @@ public class PhotoCommonMethods {
 
         File mediaFile;
         if (type == MEDIA_TYPE_IMAGE){
-            mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".png");
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".jpg");
         } else if(type == MEDIA_TYPE_VIDEO) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".mp4");
         } else {
@@ -115,13 +115,55 @@ public class PhotoCommonMethods {
         }
     }
 
-    public static PhotoMetaData getMetaDataFromURI(Context context, int requestCode, Uri imageUri) throws IOException {
+    public static boolean setMetaDataToFile(File bitmapFile, PhotoMetaData photoMetaData) {
+
+        try {
+            ExifInterface exif = new ExifInterface(bitmapFile.getPath());
+
+            LatLng latLng = photoMetaData.getLatLng();
+
+            int num1Lat = (int) Math.floor(latLng.latitude);
+            int num2Lat = (int) Math.floor((latLng.latitude - num1Lat) * 60);
+            double num3Lat = (latLng.latitude - ((double)num1Lat+((double)num2Lat/60))) * 3600000;
+
+            int num1Lon = (int)Math.floor(latLng.longitude);
+            int num2Lon = (int)Math.floor((latLng.longitude - num1Lon) * 60);
+            double num3Lon = (latLng.longitude - ((double)num1Lon+((double)num2Lon/60))) * 3600000;
+
+            exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, num1Lat+"/1,"+num2Lat+"/1,"+num3Lat+"/1000");
+            exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, num1Lon+"/1,"+num2Lon+"/1,"+num3Lon+"/1000");
+
+
+            if (latLng.latitude > 0) {
+                exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, "N");
+            } else {
+                exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, "S");
+            }
+
+            if (latLng.longitude > 0) {
+                exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, "E");
+            } else {
+                exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, "W");
+            }
+
+            exif.saveAttributes();
+
+            return true;
+
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+
+
+    public static PhotoMetaData getMetaDataFromURI(Context context, int requestCode, Intent imageData) throws IOException {
 
         PhotoMetaData photoMetaData = null;
         String filePath = null;
 
         if (requestCode == REQ_CAMERA) filePath = CAMERA_URI.getPath();
-        else if (requestCode == REQ_GALLERY) filePath = getFilePathFromURI(context, imageUri);
+        else if (requestCode == REQ_GALLERY) filePath = getFilePathFromURI(context, imageData.getData());
 
         ExifInterface exif = new ExifInterface(filePath);
 
@@ -157,12 +199,19 @@ public class PhotoCommonMethods {
             if (exif.getLatLong(output)) {
                 LatLng latLng = new LatLng(output[0],output[1]);
                 photoMetaData.setLatLng(latLng);
+                return photoMetaData;
+            }
+
+            else {
+                return photoMetaData;
             }
         }
 
-        return photoMetaData;
-
+        else {
+            return photoMetaData;
+        }
     }
+
 
     public static Bitmap bitmapFromView(View view) {
 
@@ -172,17 +221,19 @@ public class PhotoCommonMethods {
         return captureBitmap;
     }
 
-    public static boolean saveImageFromBitmap(Bitmap bitmap) throws IOException {
+    public static File saveImageFromBitmap(Bitmap bitmap) throws IOException {
 
         FileOutputStream fos;
 
-        fos = new FileOutputStream(getOutputMediaFile(MEDIA_TYPE_IMAGE));
+        File bitmapFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
 
-        boolean isSuccess = bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+        fos = new FileOutputStream(bitmapFile);
+
+        boolean isSuccess = bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
 
         fos.close();
 
-        return isSuccess;
+        return isSuccess ? bitmapFile : null;
     }
 
     public static Bitmap setRotateBitmap(Bitmap bitmap, int degrees) {
@@ -195,10 +246,6 @@ public class PhotoCommonMethods {
             bitmap.recycle();
             bitmap = rotated;
 
-//            if (bitmap != rotated) {
-//                bitmap.recycle();
-//                bitmap = rotated;
-//            }
         }
 
         return bitmap;

@@ -14,8 +14,7 @@
         android:theme="@style/AppTheme" >
 
         <activity
-            android:name="com.gamepari.sootah.MainResultActivity"
-            android:label="@string/title_activity_main_result" >
+            android:name="com.gamepari.sootah.MainResultActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -24,6 +24,18 @@ public class BitmapCompose {
         return mainBitmap;
     }
 
+    public static final Bitmap resizeBitmap(Bitmap bitmap) {
+
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        float ratio = width / TARGET_WIDTH;
+
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, (int) (width / ratio), (int) (height / ratio), true);
+
+        return scaledBitmap;
+    }
+
 
     private static final float TARGET_WIDTH = 720.f;
 
@@ -31,7 +43,7 @@ public class BitmapCompose {
 
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inJustDecodeBounds = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
+        BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
 
         int originalWidth = 0;
         if (photoMetaData.getOrientation_degree() == 90 || photoMetaData.getOrientation_degree() == 270) {
@@ -44,7 +56,7 @@ public class BitmapCompose {
         opts.inSampleSize = (int)ratio;
         opts.inJustDecodeBounds = false;
 
-        bitmap = BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
+        Bitmap bitmap = BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
         bitmap = PhotoCommonMethods.setRotateBitmap(bitmap, photoMetaData.getOrientation_degree());
 
         return bitmap;
