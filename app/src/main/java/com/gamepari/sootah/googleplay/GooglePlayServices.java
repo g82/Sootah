@@ -34,7 +34,6 @@ public class GooglePlayServices {
 
             if (errorDialog != null) {
 
-                //ErrorDialogFragment errorFragment = new ErrorDialogFragment();
                 ErrorDialogFragment errorFragment = new ErrorDialogFragment();
 
                 errorFragment.setDialog(errorDialog);

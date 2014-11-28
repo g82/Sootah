@@ -1,20 +1,23 @@
 package com.gamepari.sootah;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -36,23 +39,26 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.io.File;
 import java.io.IOException;
 
 
-public class MainResultActivity extends ActionBarActivity implements
+public class MainResultActivity extends FragmentActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
         LocationListener, View.OnClickListener {
 
     private GoogleMap googleMap;
-
-    private LocationRequest mLocationRequest;
     private LocationClient mLocationClient;
-    private Location mCurrentLocation;
+
     private View mCaptureView;
 
     private ProgressDialog progressDialog;
+    private ProgressDialog loadingDialog;
+
     private PhotoMetaData mPhotoMetaData;
+
+    private static final int REQ_SETTINGS_GPS = 1233;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,21 +70,6 @@ public class MainResultActivity extends ActionBarActivity implements
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }
-
-        LocationManager manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-            //turn on gps
-            Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-            startActivity(i);
-        }
-
-        mLocationClient = new LocationClient(this, this, this);
-        mLocationRequest = new LocationRequest();
-
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        mLocationRequest.setInterval(5000);
-        mLocationRequest.setFastestInterval(1000);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         googleMap = mapFragment.getMap();
@@ -94,15 +85,66 @@ public class MainResultActivity extends ActionBarActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-
-        mLocationClient.connect();
     }
 
     @Override
     protected void onStop() {
-        mLocationClient.disconnect();
+
+        if (mLocationClient != null) mLocationClient.disconnect();
 
         super.onStop();
+    }
+
+    private void initLocationClient() {
+
+        loadingDialog = ProgressDialog.show(this, "", "Loading...");
+
+        mLocationClient = new LocationClient(this, this, this);
+        mLocationClient.connect();
+
+    }
+
+    private void showDialogTurnOnGPS() {
+
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.location_disabled)
+                .setMessage(R.string.location_disalbed_text)
+                .setNegativeButton(R.string.ignore, null)
+                .setPositiveButton(R.string.settings, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int index) {
+
+                        Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivityForResult(i, REQ_SETTINGS_GPS);
+
+                    }
+                })
+                .show();
+
+    }
+
+    private void showDialogSetLocation() {
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.location_set)
+                .setMessage(R.string.location_set_text)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.apply, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int index) {
+
+                        LocationManager manager = (LocationManager) MainResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
+
+                        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                            // gps disabled.
+                            showDialogTurnOnGPS();
+                        } else {
+                            // gps enabled.
+
+                            initLocationClient();
+                        }
+                    }
+                })
+                .show();
     }
 
     @Override
@@ -116,22 +158,24 @@ public class MainResultActivity extends ActionBarActivity implements
 
                 try {
 
-                    mPhotoMetaData = PhotoCommonMethods.getMetaDataFromURI(this, requestCode, data.getData());
+                    mPhotoMetaData = null;
+
+                    // try extract metadata from image file.
+                    mPhotoMetaData = PhotoCommonMethods.getMetaDataFromURI(this, requestCode, data);
+
                     latLng = mPhotoMetaData.getLatLng();
 
-                } catch (Exception e) {
-                    if (mLocationClient.isConnected()) {
-
-                        Location currentLocation = mLocationClient.getLastLocation();
-
-                        if (currentLocation != null) {
-                            double lat = currentLocation.getLatitude();
-                            double lng = currentLocation.getLongitude();
-                            latLng = new LatLng(lat, lng);
-                        }
+                    if (latLng != null) {
+                        setResultAction(mPhotoMetaData);
                     }
-                } finally {
-                    setResultAction(mPhotoMetaData);
+                    else {
+                        showDialogSetLocation();
+                    }
+
+                } catch (IOException e) {
+
+                    //exif read failed.
+
                 }
 
             }
@@ -140,31 +184,75 @@ public class MainResultActivity extends ActionBarActivity implements
             if (resultCode == RESULT_OK) {
                 // Try the request again.
             }
+        } else if (requestCode == REQ_SETTINGS_GPS) {
+
+            LocationManager manager = (LocationManager) MainResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
+
+            if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER) || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                //gps enabled.
+                initLocationClient();
+            }
+
+            else {
+                //gps disabled.
+                Toast.makeText(this, "setting failed...", Toast.LENGTH_LONG).show();
+            }
+
         }
     }
 
     private void setResultAction(PhotoMetaData photoMetaData) {
         LatLng latLng = photoMetaData.getLatLng();
 
-        if (latLng != null) {
+        CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(latLng, 16.f);
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
+        googleMap.animateCamera(cameraUpdate);
 
-            CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(latLng, 16.f);
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
-            googleMap.animateCamera(cameraUpdate);
+        PlaceholderFragment placeholderFragment = (PlaceholderFragment) getSupportFragmentManager().findFragmentById(R.id.container);
+        placeholderFragment.setImage(photoMetaData);
 
-            PlaceholderFragment placeholderFragment = (PlaceholderFragment) getSupportFragmentManager().findFragmentById(R.id.container);
-            placeholderFragment.setImage(photoMetaData);
-        }
     }
 
     /* Google Location APIs Callback */
 
     @Override
     public void onConnected(Bundle bundle) {
-        //Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+
         Location location = mLocationClient.getLastLocation();
 
-        if (location == null) mLocationClient.requestLocationUpdates(mLocationRequest, this);
+        if (location == null) {
+            //keep going loading...
+            LocationRequest locationRequest = new LocationRequest();
+
+            locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+            locationRequest.setInterval(5000);
+            locationRequest.setFastestInterval(1000);
+
+            mLocationClient.requestLocationUpdates(locationRequest, this);
+        }
+        else {
+
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            mPhotoMetaData.setLatLng(latLng);
+
+            loadingDialog.dismiss();
+
+            setResultAction(mPhotoMetaData);
+        }
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+        mLocationClient.removeLocationUpdates(this);
+
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        mPhotoMetaData.setLatLng(latLng);
+
+        loadingDialog.dismiss();
+
+        setResultAction(mPhotoMetaData);
 
     }
 
@@ -187,12 +275,6 @@ public class MainResultActivity extends ActionBarActivity implements
     }
 
     @Override
-    public void onLocationChanged(Location location) {
-        mCurrentLocation = location;
-        mLocationClient.removeLocationUpdates(this);
-    }
-
-    @Override
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.gallery:
@@ -211,9 +293,12 @@ public class MainResultActivity extends ActionBarActivity implements
 
 
 
-
-
     private void share() {
+
+        if (mPhotoMetaData == null) {
+            Toast.makeText(this, R.string.choose_img_plz,Toast.LENGTH_LONG).show();
+            return;
+        }
 
         progressDialog = ProgressDialog.show(MainResultActivity.this, null,"Saving...");
 
@@ -225,23 +310,61 @@ public class MainResultActivity extends ActionBarActivity implements
         });
     }
 
+
+
     private class ComposeBitmapTask extends AsyncTask<Object, Integer, Boolean> {
+
+        private void connectMediaScan(final String filePath) {
+
+            MediaScannerConnection.scanFile(MainResultActivity.this,
+                    new String[]{filePath,}, new String[]{"image/jpg",},
+                    new MediaScannerConnection.OnScanCompletedListener() {
+                @Override
+                public void onScanCompleted(String s, Uri uri) {
+                    Log.d(this.toString(), s);
+                }
+            });
+
+        }
 
         @Override
         protected Boolean doInBackground(Object... params) {
             PhotoMetaData photoMetaData = (PhotoMetaData) params[0];
-            Bitmap mapBitmap = (Bitmap) params[1];
 
+            Bitmap mapBitmap = (Bitmap) params[1];
             Bitmap mainBitmap = PhotoCommonMethods.bitmapFromView(mCaptureView);
             Bitmap resultBitmap = BitmapCompose.composeBitmap(mainBitmap, mapBitmap, photoMetaData);
+            Bitmap scaledBitmap = BitmapCompose.resizeBitmap(resultBitmap);
 
             boolean isSuccess = false;
             try {
-                isSuccess = PhotoCommonMethods.saveImageFromBitmap(resultBitmap);
+                File bitmapFile = PhotoCommonMethods.saveImageFromBitmap(scaledBitmap);
+                if (bitmapFile != null) {
+
+                    isSuccess = PhotoCommonMethods.setMetaDataToFile(bitmapFile, photoMetaData);
+
+                    if (isSuccess) {
+
+                        connectMediaScan(bitmapFile.getPath());
+
+                    }
+                    else {
+                        bitmapFile.delete();
+                    }
+
+                    mainBitmap.recycle();
+                    mapBitmap.recycle();
+                    resultBitmap.recycle();
+                    scaledBitmap.recycle();
+
+                }
+
             } catch (IOException e) {
-                e.printStackTrace();
+                Log.d(this.toString(), e.getMessage());
             }
+
             return isSuccess;
+
         }
 
         @Override
@@ -252,6 +375,7 @@ public class MainResultActivity extends ActionBarActivity implements
             else if (aBoolean) Toast.makeText(MainResultActivity.this, "noooo", Toast.LENGTH_LONG).show();
         }
     }
+
 
     /**
      * A placeholder fragment containing a simple view.
@@ -288,31 +412,10 @@ public class MainResultActivity extends ActionBarActivity implements
             @Override
             protected void onPostExecute(Bitmap bitmap) {
                 super.onPostExecute(bitmap);
+                ivPhoto.setImageBitmap(null);
                 ivPhoto.setImageBitmap(bitmap);
             }
         }
 
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main_result, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 }

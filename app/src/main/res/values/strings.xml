@@ -2,15 +2,18 @@
 <resources>
 
     <string name="app_name">Sootah</string>
-    <string name="title_section1">Section 1</string>
-    <string name="title_section2">Section 2</string>
-    <string name="title_section3">Section 3</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="action_example">Example action</string>
-    <string name="action_settings">Settings</string>
-    <string name="title_activity_main_result">MainResultActivity</string>
+    <string name="google_maps_api_key_debug" translatable="false">AIzaSyCPg-IE7BRkZyCRJP1R264JfSV3IijXsw0</string>
+    
+    <string name="location_disabled">Location services disabled</string>
+    <string name="location_disalbed_text">Sootah needs access to your location. Please turn on location access.</string>
+    <string name="ignore">Ignore</string>
+    <string name="settings">Settings</string>
 
-    <string name="google_maps_api_key_debug">AIzaSyCPg-IE7BRkZyCRJP1R264JfSV3IijXsw0</string>
+    <string name="location_set">Set current location</string>
+    <string name="location_set_text">Set current location?</string>
+    <string name="apply">Apply</string>
+    <string name="cancel">Cancel</string>
+
+    <string name="choose_img_plz">Please choose image.</string>
 
 </resources>
