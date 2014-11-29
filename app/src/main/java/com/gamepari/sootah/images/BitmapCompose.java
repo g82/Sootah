@@ -12,6 +12,8 @@ public class BitmapCompose {
 
     public static final Bitmap composeBitmap(Bitmap mainBitmap, Bitmap mapBitmap, PhotoMetaData photoMetaData) {
 
+        //overwrite on mainBitmap
+
         Canvas canvas = new Canvas(mainBitmap);
 
         int startMapX = 0;
@@ -43,6 +45,8 @@ public class BitmapCompose {
 
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inJustDecodeBounds = true;
+        opts.inPreferredConfig = Bitmap.Config.RGB_565;
+
         BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
 
         int originalWidth = 0;
@@ -57,8 +61,15 @@ public class BitmapCompose {
         opts.inJustDecodeBounds = false;
 
         Bitmap bitmap = BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
-        bitmap = PhotoCommonMethods.setRotateBitmap(bitmap, photoMetaData.getOrientation_degree());
+        Bitmap rotatedBitmap = PhotoCommonMethods.setRotateBitmap(bitmap, photoMetaData.getOrientation_degree());
 
-        return bitmap;
+        if (rotatedBitmap != null) {
+            PhotoCommonMethods.recycleBitmap(bitmap);
+            return rotatedBitmap;
+        }
+
+        else {
+            return bitmap;
+        }
     }
 }

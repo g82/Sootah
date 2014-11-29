@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.location.Address;
 import android.location.Location;
 import android.location.LocationManager;
 import android.media.MediaScannerConnection;
@@ -32,11 +34,7 @@ import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
@@ -46,19 +44,18 @@ import java.io.IOException;
 public class MainResultActivity extends FragmentActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
-        LocationListener, View.OnClickListener {
+        LocationListener, View.OnClickListener, GeoCodeTask.OnTaskFinshListener {
 
-    private GoogleMap googleMap;
     private LocationClient mLocationClient;
 
     private View mCaptureView;
-
-    private ProgressDialog progressDialog;
-    private ProgressDialog loadingDialog;
+    private ProgressDialog mLoadingProgress;
 
     private PhotoMetaData mPhotoMetaData;
 
     private static final int REQ_SETTINGS_GPS = 1233;
+
+    private Uri savedUri = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,12 +64,15 @@ public class MainResultActivity extends FragmentActivity implements
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new PlaceholderFragment())
+                    .add(R.id.container, new ImageFragment())
                     .commit();
-        }
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        googleMap = mapFragment.getMap();
+            MarkerMapFragment mapFragment = new MarkerMapFragment();
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.map, mapFragment)
+                    .commit();
+
+        }
 
         findViewById(R.id.gallery).setOnClickListener(this);
         findViewById(R.id.camera).setOnClickListener(this);
@@ -80,6 +80,8 @@ public class MainResultActivity extends FragmentActivity implements
 
         mCaptureView = findViewById(R.id.capture_area);
 
+        mLoadingProgress = new ProgressDialog(this);
+        mLoadingProgress.setMessage("Loading...");
     }
 
     @Override
@@ -95,57 +97,7 @@ public class MainResultActivity extends FragmentActivity implements
         super.onStop();
     }
 
-    private void initLocationClient() {
 
-        loadingDialog = ProgressDialog.show(this, "", "Loading...");
-
-        mLocationClient = new LocationClient(this, this, this);
-        mLocationClient.connect();
-
-    }
-
-    private void showDialogTurnOnGPS() {
-
-        AlertDialog alertDialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.location_disabled)
-                .setMessage(R.string.location_disalbed_text)
-                .setNegativeButton(R.string.ignore, null)
-                .setPositiveButton(R.string.settings, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int index) {
-
-                        Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                        startActivityForResult(i, REQ_SETTINGS_GPS);
-
-                    }
-                })
-                .show();
-
-    }
-
-    private void showDialogSetLocation() {
-        AlertDialog alertDialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.location_set)
-                .setMessage(R.string.location_set_text)
-                .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.apply, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int index) {
-
-                        LocationManager manager = (LocationManager) MainResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
-
-                        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                            // gps disabled.
-                            showDialogTurnOnGPS();
-                        } else {
-                            // gps enabled.
-
-                            initLocationClient();
-                        }
-                    }
-                })
-                .show();
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -154,29 +106,7 @@ public class MainResultActivity extends FragmentActivity implements
 
             if (resultCode == RESULT_OK) {
 
-                LatLng latLng = null;
-
-                try {
-
-                    mPhotoMetaData = null;
-
-                    // try extract metadata from image file.
-                    mPhotoMetaData = PhotoCommonMethods.getMetaDataFromURI(this, requestCode, data);
-
-                    latLng = mPhotoMetaData.getLatLng();
-
-                    if (latLng != null) {
-                        setResultAction(mPhotoMetaData);
-                    }
-                    else {
-                        showDialogSetLocation();
-                    }
-
-                } catch (IOException e) {
-
-                    //exif read failed.
-
-                }
+                new MetaDataTask().execute(requestCode, data);
 
             }
 
@@ -197,20 +127,7 @@ public class MainResultActivity extends FragmentActivity implements
                 //gps disabled.
                 Toast.makeText(this, "setting failed...", Toast.LENGTH_LONG).show();
             }
-
         }
-    }
-
-    private void setResultAction(PhotoMetaData photoMetaData) {
-        LatLng latLng = photoMetaData.getLatLng();
-
-        CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(latLng, 16.f);
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
-        googleMap.animateCamera(cameraUpdate);
-
-        PlaceholderFragment placeholderFragment = (PlaceholderFragment) getSupportFragmentManager().findFragmentById(R.id.container);
-        placeholderFragment.setImage(photoMetaData);
-
     }
 
     /* Google Location APIs Callback */
@@ -235,9 +152,9 @@ public class MainResultActivity extends FragmentActivity implements
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             mPhotoMetaData.setLatLng(latLng);
 
-            loadingDialog.dismiss();
+            GeoCodeTask geoCodeTask = new GeoCodeTask(this, this);
+            geoCodeTask.execute(latLng);
 
-            setResultAction(mPhotoMetaData);
         }
 
     }
@@ -250,9 +167,23 @@ public class MainResultActivity extends FragmentActivity implements
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         mPhotoMetaData.setLatLng(latLng);
 
-        loadingDialog.dismiss();
+        GeoCodeTask geoCodeTask = new GeoCodeTask(this, this);
+        geoCodeTask.execute(latLng);
 
-        setResultAction(mPhotoMetaData);
+    }
+
+    @Override
+    public void onTaskFinish(Address address) {
+
+        mLoadingProgress.dismiss();
+
+        if (address != null) {
+            mPhotoMetaData.setAddress(address);
+            setResultAction(mPhotoMetaData);
+        }
+        else {
+            Toast.makeText(this, "hing...", Toast.LENGTH_LONG).show();
+        }
 
     }
 
@@ -286,33 +217,192 @@ public class MainResultActivity extends FragmentActivity implements
                 break;
 
             case R.id.share:
-                share();
+                saveAndShare();
                 break;
         }
     }
 
+    private void setResultAction(PhotoMetaData photoMetaData) {
 
+        savedUri = null;
+        mCaptureView.setDrawingCacheEnabled(false);
 
-    private void share() {
+        MarkerMapFragment mapFragment = getMapFragment();
+        mapFragment.highlightMapFromLatLng(photoMetaData);
+
+        ImageFragment imageFragment = (ImageFragment) getSupportFragmentManager().findFragmentById(R.id.container);
+        imageFragment.setImage(photoMetaData);
+    }
+
+    private void initLocationClient() {
+
+        mLoadingProgress.show();
+
+        mLocationClient = new LocationClient(this, this, this);
+        mLocationClient.connect();
+
+    }
+
+    private void showDialogTurnOnGPS() {
+
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.location_disabled)
+                .setMessage(R.string.location_disalbed_text)
+                .setNegativeButton(R.string.ignore, null)
+                .setPositiveButton(R.string.settings, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int index) {
+
+                        Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivityForResult(i, REQ_SETTINGS_GPS);
+
+                    }
+                })
+                .show();
+
+    }
+
+    public void onMapMoved() {
+        savedUri = null;
+    }
+
+    private void showDialogSetLocation() {
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.location_set)
+                .setMessage(R.string.location_set_text)
+                .setNegativeButton(R.string.cancel, null)
+                .setPositiveButton(R.string.apply, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int index) {
+
+                        LocationManager manager = (LocationManager) MainResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
+
+                        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                            // gps disabled.
+                            showDialogTurnOnGPS();
+                        } else {
+                            // gps enabled.
+
+                            initLocationClient();
+                        }
+                    }
+                })
+                .show();
+    }
+
+    private MarkerMapFragment getMapFragment() {
+        MarkerMapFragment markerMapFragment = (MarkerMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        return markerMapFragment;
+    }
+
+    private void saveAndShare() {
 
         if (mPhotoMetaData == null) {
             Toast.makeText(this, R.string.choose_img_plz,Toast.LENGTH_LONG).show();
             return;
         }
 
-        progressDialog = ProgressDialog.show(MainResultActivity.this, null,"Saving...");
+        if (savedUri != null) {
+            PhotoCommonMethods.sharePhotoFromUri(this, savedUri, mPhotoMetaData);
+        }
 
-        googleMap.snapshot(new GoogleMap.SnapshotReadyCallback() {
+        else {
+
+            mLoadingProgress.show();
+
+            OnSaveListener onSaveListener = new OnSaveListener() {
+                @Override
+                public void onSaveFinished(File savedFile) {
+
+                    mLoadingProgress.dismiss();
+
+                    if (savedFile != null) {
+                        Uri fileUri = Uri.fromFile(savedFile);
+                        savedUri = fileUri;
+                        PhotoCommonMethods.sharePhotoFromUri(MainResultActivity.this, fileUri, mPhotoMetaData);
+                    }
+                }
+            };
+            saveBitmapFile(onSaveListener);
+        }
+    }
+
+
+    public static interface OnSaveListener {
+        public void onSaveFinished(File savedFile);
+    }
+
+    private void saveBitmapFile(final OnSaveListener onSaveListener) {
+
+        MarkerMapFragment mapFragment = getMapFragment();
+
+        mapFragment.requestSnapShot(new GoogleMap.SnapshotReadyCallback() {
             @Override
             public void onSnapshotReady(Bitmap bitmap) {
-                new ComposeBitmapTask().execute(mPhotoMetaData, bitmap);
+                new WriteBitmapTask(onSaveListener).execute(mPhotoMetaData, bitmap);
             }
         });
     }
 
+    private class MetaDataTask extends AsyncTask<Object, Integer, Boolean> {
+
+        @Override
+        protected void onPreExecute() {
+            mLoadingProgress.show();
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Boolean doInBackground(Object... objects) {
+
+            mPhotoMetaData = null;
+
+            int requestCode =  (Integer)(objects[0]);
+            Intent data = (Intent)objects[1];
+
+            LatLng latLng = null;
+
+            // try extract metadata from image file.
+            try {
+                mPhotoMetaData = PhotoCommonMethods.getMetaDataFromURI(MainResultActivity.this, requestCode, data);
+                latLng = mPhotoMetaData.getLatLng();
+
+                if (latLng != null) {
+                    Address address = GeoCodeTask.getAddressFromLocation(MainResultActivity.this, latLng);
+                    mPhotoMetaData.setAddress(address);
+                }
+                return true;
+            } catch (IOException e) {
+                Log.d(this.toString(), e.getMessage());
+                return false;
+            }
+
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+            mLoadingProgress.dismiss();
+
+            if (aBoolean) {
+                if (mPhotoMetaData.getAddress() != null) {
+                    setResultAction(mPhotoMetaData);
+                }
+                else {
+                    showDialogSetLocation();
+                }
+            }
+        }
+    }
 
 
-    private class ComposeBitmapTask extends AsyncTask<Object, Integer, Boolean> {
+    private class WriteBitmapTask extends AsyncTask<Object, Integer, File> {
+
+        private OnSaveListener mOnSaveListener;
+
+        private WriteBitmapTask(OnSaveListener onSaveListener) {
+            mOnSaveListener = onSaveListener;
+        }
 
         private void connectMediaScan(final String filePath) {
 
@@ -328,51 +418,45 @@ public class MainResultActivity extends FragmentActivity implements
         }
 
         @Override
-        protected Boolean doInBackground(Object... params) {
+        protected File doInBackground(Object... params) {
             PhotoMetaData photoMetaData = (PhotoMetaData) params[0];
 
             Bitmap mapBitmap = (Bitmap) params[1];
-            Bitmap mainBitmap = PhotoCommonMethods.bitmapFromView(mCaptureView);
-            Bitmap resultBitmap = BitmapCompose.composeBitmap(mainBitmap, mapBitmap, photoMetaData);
-            Bitmap scaledBitmap = BitmapCompose.resizeBitmap(resultBitmap);
+            Bitmap workBitmap = PhotoCommonMethods.bitmapFromView(mCaptureView);
+            BitmapCompose.composeBitmap(workBitmap, mapBitmap, photoMetaData);
+            Bitmap scaledBitmap = BitmapCompose.resizeBitmap(workBitmap);
 
+            File bitmapFile = null;
             boolean isSuccess = false;
             try {
-                File bitmapFile = PhotoCommonMethods.saveImageFromBitmap(scaledBitmap);
+                bitmapFile = PhotoCommonMethods.saveImageFromBitmap(scaledBitmap);
                 if (bitmapFile != null) {
 
                     isSuccess = PhotoCommonMethods.setMetaDataToFile(bitmapFile, photoMetaData);
 
                     if (isSuccess) {
-
                         connectMediaScan(bitmapFile.getPath());
-
                     }
                     else {
                         bitmapFile.delete();
                     }
-
-                    mainBitmap.recycle();
-                    mapBitmap.recycle();
-                    resultBitmap.recycle();
-                    scaledBitmap.recycle();
-
                 }
 
             } catch (IOException e) {
                 Log.d(this.toString(), e.getMessage());
+            } finally {
+                PhotoCommonMethods.recycleBitmap(mapBitmap);
+                PhotoCommonMethods.recycleBitmap(workBitmap);
+                PhotoCommonMethods.recycleBitmap(scaledBitmap);
             }
 
-            return isSuccess;
+            return isSuccess?bitmapFile:null;
 
         }
 
         @Override
-        protected void onPostExecute(Boolean aBoolean) {
-            super.onPostExecute(aBoolean);
-            progressDialog.dismiss();
-            if (aBoolean) Toast.makeText(MainResultActivity.this, "success", Toast.LENGTH_LONG).show();
-            else if (aBoolean) Toast.makeText(MainResultActivity.this, "noooo", Toast.LENGTH_LONG).show();
+        protected void onPostExecute(File file) {
+            mOnSaveListener.onSaveFinished(file);
         }
     }
 
@@ -380,11 +464,11 @@ public class MainResultActivity extends FragmentActivity implements
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class PlaceholderFragment extends Fragment {
+    public static class ImageFragment extends Fragment {
 
         private ImageView ivPhoto;
 
-        public PlaceholderFragment() {
+        public ImageFragment() {
         }
 
         @Override
@@ -411,8 +495,18 @@ public class MainResultActivity extends FragmentActivity implements
 
             @Override
             protected void onPostExecute(Bitmap bitmap) {
-                super.onPostExecute(bitmap);
-                ivPhoto.setImageBitmap(null);
+
+                if (ivPhoto.getDrawable() != null) {
+
+                    Bitmap prevBitmap = ((BitmapDrawable)(ivPhoto.getDrawable())).getBitmap();
+
+                    if (prevBitmap != null) {
+                        ivPhoto.setImageBitmap(null);
+                        PhotoCommonMethods.recycleBitmap(prevBitmap);
+                    }
+
+                }
+
                 ivPhoto.setImageBitmap(bitmap);
             }
         }

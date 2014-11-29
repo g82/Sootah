@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
@@ -62,6 +63,15 @@ public class PhotoCommonMethods {
         CAMERA_URI = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, CAMERA_URI);
         activity.startActivityForResult(intent, REQ_CAMERA);
+    }
+
+    public static void sharePhotoFromUri(Activity activity, Uri fileUri, PhotoMetaData photoMetaData) {
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, photoMetaData.getAddressString());
+        shareIntent.setType("image/*");
+        activity.startActivity(Intent.createChooser(shareIntent, "choose"));
     }
 
     /** Create a file Uri for saving an image or video */
@@ -215,10 +225,21 @@ public class PhotoCommonMethods {
 
     public static Bitmap bitmapFromView(View view) {
 
-        view.buildDrawingCache();
-        Bitmap captureBitmap = view.getDrawingCache();
+        view.setDrawingCacheEnabled(true);
+        view.buildDrawingCache(true);
+        Bitmap captureBitmap = view.getDrawingCache(true);
 
         return captureBitmap;
+    }
+
+    public static void recycleBitmap(Bitmap bitmap) {
+
+        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.GINGERBREAD) {
+            bitmap.recycle();
+        }
+        else {
+            bitmap = null;
+        }
     }
 
     public static File saveImageFromBitmap(Bitmap bitmap) throws IOException {
@@ -237,18 +258,18 @@ public class PhotoCommonMethods {
     }
 
     public static Bitmap setRotateBitmap(Bitmap bitmap, int degrees) {
+
+        Bitmap rotatedBitmap = null;
+
         if (degrees != 0 && bitmap != null) {
             Matrix m = new Matrix();
             m.setRotate(degrees, (float)bitmap.getWidth()/2, (float)bitmap.getHeight()/2);
 
-            Bitmap rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-
-            bitmap.recycle();
-            bitmap = rotated;
+            rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
 
         }
 
-        return bitmap;
+        return rotatedBitmap;
     }
 
 

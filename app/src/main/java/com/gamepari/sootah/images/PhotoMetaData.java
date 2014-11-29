@@ -1,5 +1,8 @@
 package com.gamepari.sootah.images;
 
+import android.location.Address;
+import android.location.Location;
+
 import com.google.android.gms.maps.model.LatLng;
 
 /**
@@ -10,6 +13,9 @@ public class PhotoMetaData {
     private LatLng latLng;
     private int orientation_degree;
     private String filePath;
+
+    private Address address;
+
 
     public int getOrientation_degree() {
         return orientation_degree;
@@ -34,4 +40,28 @@ public class PhotoMetaData {
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
+
+    public Address getAddress() {
+        return address;
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
+    }
+
+    public String getAddressString() {
+
+        String result = "";
+
+        if (address != null) {
+
+            result += address.getAdminArea() + " " + address.getLocality() + " "
+                    + address.getThoroughfare() + " " + address.getSubThoroughfare();
+        }
+
+        return result;
+
+    }
+
+
 }
