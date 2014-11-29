@@ -1,6 +1,8 @@
 package com.gamepari.sootah.location;
 
 import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.AsyncTask;
 
 import com.gamepari.sootah.R;
@@ -14,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by seokceed on 2014-11-30.
@@ -24,22 +27,29 @@ import java.util.List;
  * &types=establishment
  * &key=AIzaSyCPg-IE7BRkZyCRJP1R264JfSV3IijXsw0
  *
+ *
+ * first Google Places API.
+ *
+ * if failed api,
+ *
+ * second Google Geocoder.
+ *
  */
+
+
 public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
 
     private static final String PLACES_API_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
     private static final boolean USE_SENSOR = true;
     private static final int RADIUS = 30;
     private static final String TYPES = "establishment";
-    private String api_key = null;
 
-    public PlacesTask(Context context) {
-        api_key = context.getString(R.string.google_maps_api_key_debug);
-    }
+    private Context mContext;
+    private OnPlaceTaskListener mOnPlaceTaskListener;
 
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
+    public PlacesTask(Context context, OnPlaceTaskListener onPlaceTaskListener) {
+        mContext = context;
+        mOnPlaceTaskListener = onPlaceTaskListener;
     }
 
     @Override
@@ -47,12 +57,55 @@ public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
 
         LatLng latLng = latLngs[0];
 
+        List<Places> placesList = getPlacesFromLocation(mContext, latLng);
+
+        if (placesList != null && placesList.size() > 0) return placesList;
+
+        Address address = getAddressFromLocation(mContext, latLng);
+
+        if (address != null) {
+
+            if (placesList == null) placesList = new ArrayList<Places>();
+
+            Places place = new Places();
+            place.setLocation(latLng);
+            place.setVicinity(address.getAddressLine(0));
+
+            placesList.add(place);
+            return placesList;
+
+        }
+
+        return null;
+    }
+
+    public static Address getAddressFromLocation(Context context, LatLng latLng) {
+
+        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+        List<Address> addresses = null;
+
+        try {
+            addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+
+            if (addresses != null && addresses.size() > 0) {
+                Address address = addresses.get(0);
+                return address;
+            }
+            else return null;
+
+        } catch (IOException e) {
+            return null;
+        }
+
+    }
+
+    public static List<Places> getPlacesFromLocation(Context context, LatLng latLng) {
         String urlString = PLACES_API_URL
                 + "?location=" + latLng.latitude + "," + latLng.longitude
                 + "&radius=" + RADIUS
                 + "&sensor=" + USE_SENSOR
                 + "&types=" + TYPES
-                + "&key=" + api_key;
+                + "&key=" + context.getString(R.string.google_maps_api_key_debug);
 
         InputStream inputStream = null;
 
@@ -60,31 +113,58 @@ public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
             inputStream = ParserUtil.downloadURL(urlString);
             String jsonString = ParserUtil.makeStringFromStream(inputStream);
 
-            List<Places> placesList = new ArrayList<Places>();
-
             JSONObject jsonObject = new JSONObject(jsonString);
-            JSONArray arrResults = jsonObject.getJSONArray("results");
 
-            JSONObject geometry = arrResults.getJSONObject(0);
-            JSONObject location = geometry.getJSONObject("location");
+            String status = jsonObject.getString("status");
 
+            if (status.equals("OK")) {
 
+                List<Places> placesList = new ArrayList<Places>();
 
+                //using Places API.
 
+                JSONArray arrResults = jsonObject.getJSONArray("results");
 
-            return placesList;
+                for (int i = 0; i < arrResults.length(); i++) {
+
+                    JSONObject jsonResult = arrResults.getJSONObject(i);
+
+                    JSONObject jsonGeometry = jsonResult.getJSONObject("geometry");
+                    JSONObject jsonLocation = jsonGeometry.getJSONObject("location");
+
+                    JSONArray jsonTypes = jsonResult.getJSONArray("types");
+
+                    Places place = new Places();
+
+                    place.setLocation(new LatLng(jsonLocation.getDouble("lat"), jsonLocation.getDouble("lng")));
+                    place.setName(jsonResult.getString("name"));
+                    place.setVicinity(jsonResult.getString("vicinity"));
+                    place.setTypes(jsonTypes.toString().split(","));
+
+                    placesList.add(place);
+
+                }
+
+                return placesList;
+
+            }
+            else {
+                return null;
+            }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            return null;
         } catch (JSONException e) {
-            e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
     @Override
     protected void onPostExecute(List<Places> placeses) {
-        super.onPostExecute(placeses);
+        if (mOnPlaceTaskListener != null) mOnPlaceTaskListener.onParseFinished(placeses);
+    }
+
+    public interface OnPlaceTaskListener {
+        public void onParseFinished(List<Places> placesList);
     }
 }

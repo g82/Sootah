@@ -29,7 +29,8 @@ import com.gamepari.sootah.googleplay.GooglePlayServices;
 import com.gamepari.sootah.images.BitmapCompose;
 import com.gamepari.sootah.images.PhotoCommonMethods;
 import com.gamepari.sootah.images.PhotoMetaData;
-import com.gamepari.sootah.location.GeoCodeTask;
+import com.gamepari.sootah.location.Places;
+import com.gamepari.sootah.location.PlacesTask;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
@@ -40,12 +41,13 @@ import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 
 public class MainResultActivity extends FragmentActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
-        LocationListener, View.OnClickListener, GeoCodeTask.OnTaskFinshListener {
+        LocationListener, View.OnClickListener, PlacesTask.OnPlaceTaskListener {
 
     private LocationClient mLocationClient;
 
@@ -153,8 +155,8 @@ public class MainResultActivity extends FragmentActivity implements
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             mPhotoMetaData.setLatLng(latLng);
 
-            GeoCodeTask geoCodeTask = new GeoCodeTask(this, this);
-            geoCodeTask.execute(latLng);
+            PlacesTask placesTask = new PlacesTask(this, this);
+            placesTask.execute(latLng);
 
         }
 
@@ -168,22 +170,26 @@ public class MainResultActivity extends FragmentActivity implements
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         mPhotoMetaData.setLatLng(latLng);
 
-        GeoCodeTask geoCodeTask = new GeoCodeTask(this, this);
-        geoCodeTask.execute(latLng);
+        PlacesTask placesTask = new PlacesTask(this,this);
+        placesTask.execute(latLng);
 
     }
 
     @Override
-    public void onTaskFinish(Address address) {
+    public void onParseFinished(List<Places> placesList) {
 
         mLoadingProgress.dismiss();
 
-        if (address != null) {
-            mPhotoMetaData.setAddress(address);
+        if (placesList != null) {
+
+            mPhotoMetaData.setPlaces(placesList.get(0));
             setResultAction(mPhotoMetaData);
+
         }
         else {
+
             Toast.makeText(this, "hing...", Toast.LENGTH_LONG).show();
+
         }
 
     }
@@ -195,6 +201,9 @@ public class MainResultActivity extends FragmentActivity implements
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
+
+        mLoadingProgress.dismiss();
+
         if (connectionResult.hasResolution()) {
             try {
                 connectionResult.startResolutionForResult(this, GooglePlayServices.CONNECTION_FAILURE_RESOLUTION_REQUEST);
@@ -369,8 +378,21 @@ public class MainResultActivity extends FragmentActivity implements
                 latLng = mPhotoMetaData.getLatLng();
 
                 if (latLng != null) {
-                    Address address = GeoCodeTask.getAddressFromLocation(MainResultActivity.this, latLng);
-                    mPhotoMetaData.setAddress(address);
+                    List<Places> placesList = PlacesTask.getPlacesFromLocation(MainResultActivity.this, latLng);
+
+                    if (placesList == null || placesList.size() <= 0) {
+
+                        Address address = PlacesTask.getAddressFromLocation(MainResultActivity.this, latLng);
+                        mPhotoMetaData.setAddress(address);
+                        Places places = new Places();
+                        places.setVicinity(address.getAddressLine(0));
+                        mPhotoMetaData.setPlaces(places);
+
+                    }
+                    else {
+                        mPhotoMetaData.setPlaces(placesList.get(0));
+                    }
+
                 }
                 return true;
             } catch (IOException e) {

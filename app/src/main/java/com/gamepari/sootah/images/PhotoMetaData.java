@@ -3,6 +3,7 @@ package com.gamepari.sootah.images;
 import android.location.Address;
 import android.location.Location;
 
+import com.gamepari.sootah.location.Places;
 import com.google.android.gms.maps.model.LatLng;
 
 /**
@@ -16,6 +17,15 @@ public class PhotoMetaData {
 
     private Address address;
 
+    private Places places;
+
+    public Places getPlaces() {
+        return places;
+    }
+
+    public void setPlaces(Places places) {
+        this.places = places;
+    }
 
     public int getOrientation_degree() {
         return orientation_degree;

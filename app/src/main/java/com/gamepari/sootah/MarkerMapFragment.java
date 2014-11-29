@@ -3,7 +3,8 @@ package com.gamepari.sootah;
 import android.location.Address;
 
 import com.gamepari.sootah.images.PhotoMetaData;
-import com.gamepari.sootah.location.GeoCodeTask;
+import com.gamepari.sootah.location.Places;
+import com.gamepari.sootah.location.PlacesTask;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -13,6 +14,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -36,7 +38,7 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
 
         final LatLng latLng = photoMetaData.getLatLng();
 
-        final Address address = photoMetaData.getAddress();
+        //final Address address = photoMetaData.getAddress();
 
 
         CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(latLng, 16.f);
@@ -53,7 +55,7 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
                 marker = getMap().addMarker(
                         new MarkerOptions()
                                 .position(latLng)
-                                .title(makeTitleText(address))
+                                .title(photoMetaData.getPlaces().getVicinity())
                                 .draggable(true)
                 );
 
@@ -116,9 +118,9 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
     @Override
     public void onMarkerDragEnd(final Marker marker) {
 
-        GeoCodeTask geoCodeTask = new GeoCodeTask(getActivity(), new GeoCodeTask.OnTaskFinshListener() {
+        PlacesTask placesTask = new PlacesTask(getActivity(), new PlacesTask.OnPlaceTaskListener() {
             @Override
-            public void onTaskFinish(Address address) {
+            public void onParseFinished(List<Places> placesList) {
 
                 CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(marker.getPosition(), getMap().getCameraPosition().zoom);
 
@@ -126,14 +128,15 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
 
                 getMap().animateCamera(cameraUpdate);
 
-                if (address != null) {
-                    marker.setTitle(makeTitleText(address));
+                if (placesList != null) {
+                    marker.setTitle(placesList.get(0).getVicinity());
                 }
                 marker.showInfoWindow();
 
             }
         });
-        geoCodeTask.execute(marker.getPosition());
+
+        placesTask.execute(marker.getPosition());
 
         ((MainResultActivity)getActivity()).onMapMoved();
     }
