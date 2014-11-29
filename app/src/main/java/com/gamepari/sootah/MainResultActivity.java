@@ -29,6 +29,7 @@ import com.gamepari.sootah.googleplay.GooglePlayServices;
 import com.gamepari.sootah.images.BitmapCompose;
 import com.gamepari.sootah.images.PhotoCommonMethods;
 import com.gamepari.sootah.images.PhotoMetaData;
+import com.gamepari.sootah.location.GeoCodeTask;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;

@@ -1,4 +1,4 @@
-package com.gamepari.sootah;
+package com.gamepari.sootah.location;
 
 import android.content.Context;
 import android.location.Address;

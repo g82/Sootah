@@ -3,6 +3,7 @@ package com.gamepari.sootah;
 import android.location.Address;
 
 import com.gamepari.sootah.images.PhotoMetaData;
+import com.gamepari.sootah.location.GeoCodeTask;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -70,6 +71,8 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
     private String makeTitleText(Address address) {
 
         String addrStr = address.getAdminArea();
+
+        String name = address.getFeatureName();
 
         Locale currentLocale = Locale.getDefault();
 
