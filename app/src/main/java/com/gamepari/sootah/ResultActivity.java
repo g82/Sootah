@@ -17,7 +17,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -44,7 +44,7 @@ import java.io.IOException;
 import java.util.List;
 
 
-public class MainResultActivity extends FragmentActivity implements
+public class ResultActivity extends ActionBarActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
         LocationListener, View.OnClickListener, PlacesTask.OnPlaceTaskListener {
@@ -62,8 +62,19 @@ public class MainResultActivity extends FragmentActivity implements
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        int requestCode = getIntent().getIntExtra("requestCode", -1);
+
+        if (requestCode == PhotoCommonMethods.REQ_CAMERA) {
+            PhotoCommonMethods.photoFromCamera(this);
+        }
+
+        else if (requestCode == PhotoCommonMethods.REQ_GALLERY) {
+            PhotoCommonMethods.photoFromGallery(this, getString(R.string.pick_image));
+        }
+
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main_result);
+        setContentView(R.layout.activity_result);
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
@@ -85,6 +96,8 @@ public class MainResultActivity extends FragmentActivity implements
 
         mLoadingProgress = new ProgressDialog(this);
         mLoadingProgress.setMessage("Loading...");
+
+
     }
 
     @Override
@@ -99,7 +112,6 @@ public class MainResultActivity extends FragmentActivity implements
 
         super.onStop();
     }
-
 
 
     @Override
@@ -119,7 +131,7 @@ public class MainResultActivity extends FragmentActivity implements
             }
         } else if (requestCode == REQ_SETTINGS_GPS) {
 
-            LocationManager manager = (LocationManager) MainResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
+            LocationManager manager = (LocationManager) ResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
 
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER) || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 //gps enabled.
@@ -181,10 +193,8 @@ public class MainResultActivity extends FragmentActivity implements
         mLoadingProgress.dismiss();
 
         if (placesList != null) {
-
-            mPhotoMetaData.setPlaces(placesList.get(0));
+            mPhotoMetaData.setPlacesList(placesList);
             setResultAction(mPhotoMetaData);
-
         }
         else {
 
@@ -219,11 +229,11 @@ public class MainResultActivity extends FragmentActivity implements
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.gallery:
-                PhotoCommonMethods.photoFromGallery(MainResultActivity.this, "select");
+                PhotoCommonMethods.photoFromGallery(ResultActivity.this, getString(R.string.pick_image));
                 break;
 
             case R.id.camera:
-                PhotoCommonMethods.photoFromCamera(MainResultActivity.this);
+                PhotoCommonMethods.photoFromCamera(ResultActivity.this);
                 break;
 
             case R.id.share:
@@ -285,7 +295,7 @@ public class MainResultActivity extends FragmentActivity implements
                     @Override
                     public void onClick(DialogInterface dialogInterface, int index) {
 
-                        LocationManager manager = (LocationManager) MainResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
+                        LocationManager manager = (LocationManager) ResultActivity.this.getSystemService(Context.LOCATION_SERVICE);
 
                         if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER) && !manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                             // gps disabled.
@@ -329,7 +339,7 @@ public class MainResultActivity extends FragmentActivity implements
                     if (savedFile != null) {
                         Uri fileUri = Uri.fromFile(savedFile);
                         savedUri = fileUri;
-                        PhotoCommonMethods.sharePhotoFromUri(MainResultActivity.this, fileUri, mPhotoMetaData);
+                        PhotoCommonMethods.sharePhotoFromUri(ResultActivity.this, fileUri, mPhotoMetaData);
                     }
                 }
             };
@@ -354,6 +364,8 @@ public class MainResultActivity extends FragmentActivity implements
         });
     }
 
+    /** Read MetaData exist Photo from SDCard */
+
     private class MetaDataTask extends AsyncTask<Object, Integer, Boolean> {
 
         @Override
@@ -374,23 +386,22 @@ public class MainResultActivity extends FragmentActivity implements
 
             // try extract metadata from image file.
             try {
-                mPhotoMetaData = PhotoCommonMethods.getMetaDataFromURI(MainResultActivity.this, requestCode, data);
+                mPhotoMetaData = PhotoCommonMethods.getMetaDataFromURI(ResultActivity.this, requestCode, data);
                 latLng = mPhotoMetaData.getLatLng();
 
                 if (latLng != null) {
-                    List<Places> placesList = PlacesTask.getPlacesFromLocation(MainResultActivity.this, latLng);
+                    List<Places> placesList = PlacesTask.getPlacesFromLocation(ResultActivity.this, latLng);
 
                     if (placesList == null || placesList.size() <= 0) {
 
-                        Address address = PlacesTask.getAddressFromLocation(MainResultActivity.this, latLng);
+                        Address address = PlacesTask.getAddressFromLocation(ResultActivity.this, latLng);
                         mPhotoMetaData.setAddress(address);
                         Places places = new Places();
                         places.setVicinity(address.getAddressLine(0));
-                        mPhotoMetaData.setPlaces(places);
 
                     }
                     else {
-                        mPhotoMetaData.setPlaces(placesList.get(0));
+                        mPhotoMetaData.setPlacesList(placesList);
                     }
 
                 }
@@ -429,7 +440,7 @@ public class MainResultActivity extends FragmentActivity implements
 
         private void connectMediaScan(final String filePath) {
 
-            MediaScannerConnection.scanFile(MainResultActivity.this,
+            MediaScannerConnection.scanFile(ResultActivity.this,
                     new String[]{filePath,}, new String[]{"image/jpg",},
                     new MediaScannerConnection.OnScanCompletedListener() {
                 @Override
@@ -497,7 +508,7 @@ public class MainResultActivity extends FragmentActivity implements
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main_result, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_result_image, container, false);
 
             ivPhoto = (ImageView) rootView.findViewById(R.id.image);
 

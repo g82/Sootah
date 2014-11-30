@@ -100,11 +100,13 @@ public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
     }
 
     public static List<Places> getPlacesFromLocation(Context context, LatLng latLng) {
+
         String urlString = PLACES_API_URL
                 + "?location=" + latLng.latitude + "," + latLng.longitude
                 + "&radius=" + RADIUS
                 + "&sensor=" + USE_SENSOR
                 + "&types=" + TYPES
+                + "&language=" + Locale.getDefault().getLanguage()
                 + "&key=" + context.getString(R.string.google_maps_api_key_debug);
 
         InputStream inputStream = null;

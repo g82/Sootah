@@ -16,4 +16,11 @@
 
     <string name="choose_img_plz">Please choose image.</string>
 
+    <string name="album">Album</string>
+    <string name="camera">Camera</string>
+
+    <string name="pick_image">Pick image</string>
+
+    <string name="drag_pin_plz">Drag the pin!</string>
+
 </resources>

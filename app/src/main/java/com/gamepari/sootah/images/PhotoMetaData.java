@@ -6,10 +6,17 @@ import android.location.Location;
 import com.gamepari.sootah.location.Places;
 import com.google.android.gms.maps.model.LatLng;
 
+import java.util.List;
+
 /**
  * Created by seokceed on 2014-11-23.
  */
 public class PhotoMetaData {
+
+    public static final int ADDRESS_FROM_PLACESAPI = 1234;
+    public static final int ADDRESS_FROM_GEOCODE = 4543;
+
+    private int addressType;
 
     private LatLng latLng;
     private int orientation_degree;
@@ -17,14 +24,22 @@ public class PhotoMetaData {
 
     private Address address;
 
-    private Places places;
+    private List<Places> placesList;
 
-    public Places getPlaces() {
-        return places;
+    public int getAddressType() {
+        return addressType;
     }
 
-    public void setPlaces(Places places) {
-        this.places = places;
+    public void setAddressType(int addressType) {
+        this.addressType = addressType;
+    }
+
+    public List<Places> getPlacesList() {
+        return placesList;
+    }
+
+    public void setPlacesList(List<Places> placesList) {
+        this.placesList = placesList;
     }
 
     public int getOrientation_degree() {

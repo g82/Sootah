@@ -1,0 +1,85 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    tools:context="com.gamepari.sootah.ResultActivity" tools:ignore="MergeRootFrame">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="3"
+        android:id="@+id/capture_area">
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2">
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:padding="@dimen/short_margin"
+        android:layout_width="match_parent"
+        android:orientation="vertical"
+        android:layout_height="wrap_content"
+        android:background="#50000000">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:gravity="right">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ic_result_album"
+                android:layout_marginRight="@dimen/short_margin"
+                android:id="@+id/gallery"/>
+
+            <ImageButton
+                android:layout_toRightOf="@id/gallery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ic_result_camera"
+                android:layout_marginRight="@dimen/short_margin"
+                android:id="@+id/camera"
+                />
+
+            <ImageButton
+                android:layout_toRightOf="@id/camera"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/ic_result_share"
+                android:id="@+id/share"
+                />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@android:color/white"
+            android:textScaleX="0.98"
+            android:id="@+id/tv_title"
+            android:text="조금느린카페"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textScaleX="0.98"
+            android:textColor="@android:color/white"
+            android:id="@+id/tv_address"
+            android:text="충청북도 충주시 단월동 381-2"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

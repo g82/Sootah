@@ -1,6 +1,7 @@
 package com.gamepari.sootah;
 
 import android.location.Address;
+import android.widget.Toast;
 
 import com.gamepari.sootah.images.PhotoMetaData;
 import com.gamepari.sootah.location.Places;
@@ -48,6 +49,8 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
             @Override
             public void onFinish() {
 
+
+
                 if (marker != null) {
                     marker.remove();
                 }
@@ -55,7 +58,7 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
                 marker = getMap().addMarker(
                         new MarkerOptions()
                                 .position(latLng)
-                                .title(photoMetaData.getPlaces().getVicinity())
+                                //.title(photoMetaData.getPlaces().getVicinity())
                                 .draggable(true)
                 );
 
@@ -67,6 +70,8 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
             public void onCancel() {}
 
         });
+
+        Toast.makeText(getActivity(), R.string.drag_pin_plz, Toast.LENGTH_LONG).show();
 
     }
 
@@ -128,8 +133,9 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
 
                 getMap().animateCamera(cameraUpdate);
 
+
                 if (placesList != null) {
-                    marker.setTitle(placesList.get(0).getVicinity());
+                    //marker.setTitle(placesList.get(0).getVicinity());
                 }
                 marker.showInfoWindow();
 
@@ -138,7 +144,7 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
 
         placesTask.execute(marker.getPosition());
 
-        ((MainResultActivity)getActivity()).onMapMoved();
+        ((ResultActivity)getActivity()).onMapMoved();
     }
 
 
