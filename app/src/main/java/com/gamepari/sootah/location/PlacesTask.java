@@ -54,33 +54,6 @@ public class PlacesTask extends AsyncTask<PhotoMetaData, Integer, PhotoMetaData>
         mOnPlaceTaskListener = onPlaceTaskListener;
     }
 
-    @Override
-    protected PhotoMetaData doInBackground(PhotoMetaData... photoMetaDatas) {
-
-        PhotoMetaData photoMetaData = photoMetaDatas[0];
-
-        LatLng latLng = photoMetaData.getLatLng();
-
-        List<Places> placesList = getPlacesFromLocation(mContext, latLng);
-
-        if (placesList != null && placesList.size() > 0) {
-            photoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
-            photoMetaData.setPlacesList(placesList);
-        }
-
-        Address address = getAddressFromLocation(mContext, latLng);
-
-        if (address != null) {
-            if (placesList == null) photoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_GEOCODE);
-            photoMetaData.setAddress(address);
-        }
-        else if (address == null && photoMetaData.getAddressType() != PhotoMetaData.ADDRESS_FROM_PLACESAPI) {
-            return null;
-        }
-
-        return photoMetaData;
-    }
-
     public static Address getAddressFromLocation(Context context, LatLng latLng) {
 
         Geocoder geocoder = new Geocoder(context, Locale.getDefault());
@@ -92,8 +65,7 @@ public class PlacesTask extends AsyncTask<PhotoMetaData, Integer, PhotoMetaData>
             if (addresses != null && addresses.size() > 0) {
                 Address address = addresses.get(0);
                 return address;
-            }
-            else return null;
+            } else return null;
 
         } catch (IOException e) {
             return null;
@@ -151,8 +123,7 @@ public class PlacesTask extends AsyncTask<PhotoMetaData, Integer, PhotoMetaData>
 
                 return placesList;
 
-            }
-            else {
+            } else {
                 return null;
             }
 
@@ -164,11 +135,40 @@ public class PlacesTask extends AsyncTask<PhotoMetaData, Integer, PhotoMetaData>
     }
 
     @Override
+    protected PhotoMetaData doInBackground(PhotoMetaData... photoMetaDatas) {
+
+        PhotoMetaData photoMetaData = photoMetaDatas[0];
+
+        LatLng latLng = photoMetaData.getLatLng();
+
+        List<Places> placesList = getPlacesFromLocation(mContext, latLng);
+
+        if (placesList != null && placesList.size() > 0) {
+            photoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
+            photoMetaData.setPlacesList(placesList);
+        }
+
+        Address address = getAddressFromLocation(mContext, latLng);
+
+        if (address != null) {
+            if (placesList == null)
+                photoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_GEOCODE);
+            photoMetaData.setAddress(address);
+        } else if (address == null && (placesList == null || placesList.size() == 0)) {
+            photoMetaData.setAddressType(PhotoMetaData.ADDRESS_NONE);
+        }
+
+        return photoMetaData;
+    }
+
+    @Override
     protected void onPostExecute(PhotoMetaData photoMetaData) {
-        if (mOnPlaceTaskListener != null) mOnPlaceTaskListener.onParseFinished(photoMetaData.getAddressType(), photoMetaData);
+        mOnPlaceTaskListener.onPlacesTaskFinished(photoMetaData.getAddressType(), photoMetaData);
     }
 
     public interface OnPlaceTaskListener {
-        public void onParseFinished(int addressType, PhotoMetaData photoMetaData);
+        public void onPlacesTaskFinished(int addressType, PhotoMetaData photoMetaData);
     }
+
+
 }

@@ -1,5 +1,6 @@
 package com.gamepari.sootah;
 
+import android.app.Activity;
 import android.location.Address;
 import android.widget.Toast;
 
@@ -24,52 +25,53 @@ public class MarkerMapFragment extends SupportMapFragment implements
 
     private Marker marker;
     private PhotoMetaData mPhotoMetaData;
-    private ResultActivity.OnMapPinMovedListener mapPinMovedListener;
+    private MarkerDragListener markerDragListener;
 
-
-    public void setMapPinMovedListener(ResultActivity.OnMapPinMovedListener mapPinMovedListener) {
-        this.mapPinMovedListener = mapPinMovedListener;
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        markerDragListener = (MarkerDragListener) activity;
     }
 
     @Override
     public void onStart() {
         super.onStart();
         getMap().setOnMarkerDragListener(this);
+        getMap().setOnCameraChangeListener((GoogleMap.OnCameraChangeListener) getActivity());
     }
 
     public void requestSnapShot(GoogleMap.SnapshotReadyCallback snapshotReadyCallback) {
         getMap().snapshot(snapshotReadyCallback);
     }
 
-    public void highlightMapFromLatLng(PhotoMetaData photoMetaData) {
+    public void highlightMapFromLatLng(final PhotoMetaData photoMetaData) {
 
         mPhotoMetaData = photoMetaData;
 
-        final LatLng latLng = mPhotoMetaData.getLatLng();
+        final LatLng latLng = photoMetaData.getLatLng();
 
-        CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(latLng, 16.f);
+        if (marker != null) {
+            marker.remove();
+        }
+
+        marker = getMap().addMarker(
+                new MarkerOptions()
+                        .position(latLng)
+                        .draggable(true)
+        );
+
+        CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(marker.getPosition(), 16.f);
         CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
 
         getMap().animateCamera(cameraUpdate, new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
 
-                if (marker != null) {
-                    marker.remove();
-                }
-
-                marker = getMap().addMarker(
-                        new MarkerOptions()
-                                .position(latLng)
-                                .draggable(true)
-                );
-
-                if (mapPinMovedListener!=null) mapPinMovedListener.onPinMoved(mPhotoMetaData);
-
             }
 
             @Override
-            public void onCancel() {}
+            public void onCancel() {
+            }
 
         });
 
@@ -96,9 +98,7 @@ public class MarkerMapFragment extends SupportMapFragment implements
                     }
                 }
             }
-        }
-
-        else {
+        } else {
 
             if (address.getLocality() != null) {
                 addrStr = address.getLocality() + ", " + addrStr;
@@ -120,14 +120,17 @@ public class MarkerMapFragment extends SupportMapFragment implements
     }
 
     @Override
-    public void onMarkerDrag(Marker marker) {}
+    public void onMarkerDrag(Marker marker) {
+    }
 
     @Override
     public void onMarkerDragEnd(final Marker marker) {
 
+        markerDragListener.onMarkerPositionChanged(marker.getPosition());
+
         PlacesTask placesTask = new PlacesTask(getActivity(), new PlacesTask.OnPlaceTaskListener() {
             @Override
-            public void onParseFinished(int addressType, PhotoMetaData photoMetaData) {
+            public void onPlacesTaskFinished(int addressType, PhotoMetaData photoMetaData) {
 
                 switch (addressType) {
                     case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
@@ -148,8 +151,6 @@ public class MarkerMapFragment extends SupportMapFragment implements
 
                         getMap().animateCamera(cameraUpdate);
 
-                        if (mapPinMovedListener !=null) mapPinMovedListener.onPinMoved(mPhotoMetaData);
-
                         break;
                 }
 
@@ -158,7 +159,13 @@ public class MarkerMapFragment extends SupportMapFragment implements
 
         mPhotoMetaData.setLatLng(marker.getPosition());
         placesTask.execute(mPhotoMetaData);
-        ((ResultActivity)getActivity()).onMapMoved();
+
+    }
+
+    public interface MarkerDragListener {
+
+        public void onMarkerPositionChanged(LatLng latLng);
+
     }
 
 

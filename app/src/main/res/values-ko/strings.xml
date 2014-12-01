@@ -19,5 +19,7 @@
     <string name="share">공유</string>
     <string name="choose_place">장소 선택</string>
     <string name="not_here">여긴 없어요.</string>
+    <string name="plz_start">사진을 촬영하거나 가져오세요.</string>
+    <string name="loading">불러오는 중&#8230;</string>
 
 </resources>

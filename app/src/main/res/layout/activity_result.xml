@@ -1,24 +1,54 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:weightSum="3"
-    android:id="@+id/capture_area"
-    tools:context="com.gamepari.sootah.ResultActivity" tools:ignore="MergeRootFrame">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.gamepari.sootah.ResultActivity"
+    tools:ignore="MergeRootFrame">
 
-
-    <FrameLayout
-        android:layout_weight="2"
-        android:id="@+id/container"
+    <LinearLayout
+        android:id="@+id/capture_area"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="3">
 
-    <FrameLayout
-        android:id="@+id/map"
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2" />
+
+        <FrameLayout
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/rl_none"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        />
+        android:layout_height="match_parent"
+        android:background="#ffffff"
+        android:gravity="center"
+        android:orientation="vertical">
 
-</LinearLayout>
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_action_new_picture" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/short_margin"
+            android:text="@string/plz_start"
+            android:textScaleX="0.98"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
+</RelativeLayout>

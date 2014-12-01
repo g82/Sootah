@@ -10,7 +10,6 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -18,11 +17,8 @@ import android.view.View;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -209,25 +205,28 @@ public class PhotoCommonMethods {
             if (exif.getLatLong(output)) {
                 LatLng latLng = new LatLng(output[0],output[1]);
                 photoMetaData.setLatLng(latLng);
-                return photoMetaData;
             }
 
-            else {
-                return photoMetaData;
-            }
+            return photoMetaData;
         }
 
         else {
-            return photoMetaData;
+            return null;
         }
+    }
+
+    public static boolean deleteFileFromUri(Uri uri) {
+        File file = new File(uri.getPath());
+        return file.delete();
     }
 
 
     public static Bitmap bitmapFromView(View view) {
 
         view.setDrawingCacheEnabled(true);
-        view.buildDrawingCache(true);
+        //view.buildDrawingCache(true);
         Bitmap captureBitmap = view.getDrawingCache(true);
+        //view.setDrawingCacheEnabled(false);
 
         return captureBitmap;
     }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Its Here</string>
+    <string name="app_name">It\'s Here</string>
     <string name="google_maps_api_key_debug" translatable="false">AIzaSyCPg-IE7BRkZyCRJP1R264JfSV3IijXsw0</string>
-    
+
     <string name="location_disabled">Location services disabled</string>
     <string name="location_disalbed_text">Sootah needs access to your location. Please turn on location access.</string>
     <string name="ignore">Ignore</string>
@@ -25,7 +25,10 @@
     <string name="share">Share</string>
 
     <string name="choose_place">Choose place</string>
-    
+
     <string name="not_here">Not here.</string>
+    <string name="plz_start">Get photo here.</string>
+
+    <string name="loading">Loading&#8230;</string>
 
 </resources>

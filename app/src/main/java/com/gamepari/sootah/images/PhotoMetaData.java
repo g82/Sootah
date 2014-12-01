@@ -14,17 +14,16 @@ public class PhotoMetaData {
 
     public static final int ADDRESS_FROM_PLACESAPI = 1234;
     public static final int ADDRESS_FROM_GEOCODE = 4543;
+    public static final int ADDRESS_NONE = 2394;
 
-    private int addressType;
+    private int addressType = ADDRESS_NONE;
 
-    private LatLng latLng;
     private int orientation_degree;
     private String filePath;
 
+    private LatLng latLng;
     private Address address;
-
     private List<Places> placesList;
-
     private Places confirmedPlace;
 
     public Places getConfirmedPlace() {
@@ -95,6 +94,15 @@ public class PhotoMetaData {
 
         return result;
 
+    }
+
+    public void clearPlaceData() {
+        latLng = null;
+        addressType = ADDRESS_NONE;
+        address = null;
+        if (placesList != null) placesList.clear();
+        placesList = null;
+        confirmedPlace = null;
     }
 
 
