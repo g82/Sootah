@@ -21,7 +21,17 @@ import java.util.Locale;
 /**
  * Created by seokceed on 2014-11-29.
  */
-public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.OnMarkerDragListener {
+public class MarkerMapFragment extends SupportMapFragment implements
+        GoogleMap.OnMarkerDragListener {
+
+    private Marker marker;
+    private PhotoMetaData mPhotoMetaData;
+    private ResultActivity.OnMapPinMovedListener mapPinMovedListener;
+
+
+    public void setMapPinMovedListener(ResultActivity.OnMapPinMovedListener mapPinMovedListener) {
+        this.mapPinMovedListener = mapPinMovedListener;
+    }
 
     @Override
     public void onStart() {
@@ -33,14 +43,11 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
         getMap().snapshot(snapshotReadyCallback);
     }
 
-    private Marker marker;
+    public void highlightMapFromLatLng(PhotoMetaData photoMetaData) {
 
-    public void highlightMapFromLatLng(final PhotoMetaData photoMetaData) {
+        mPhotoMetaData = photoMetaData;
 
-        final LatLng latLng = photoMetaData.getLatLng();
-
-        //final Address address = photoMetaData.getAddress();
-
+        final LatLng latLng = mPhotoMetaData.getLatLng();
 
         CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(latLng, 16.f);
         CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
@@ -49,8 +56,6 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
             @Override
             public void onFinish() {
 
-
-
                 if (marker != null) {
                     marker.remove();
                 }
@@ -58,11 +63,10 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
                 marker = getMap().addMarker(
                         new MarkerOptions()
                                 .position(latLng)
-                                //.title(photoMetaData.getPlaces().getVicinity())
                                 .draggable(true)
                 );
 
-                marker.showInfoWindow();
+                if (mapPinMovedListener!=null) mapPinMovedListener.onPinMoved(mPhotoMetaData);
 
             }
 
@@ -125,7 +129,9 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
 
         PlacesTask placesTask = new PlacesTask(getActivity(), new PlacesTask.OnPlaceTaskListener() {
             @Override
-            public void onParseFinished(List<Places> placesList) {
+            public void onParseFinished(int addressType, PhotoMetaData photoMetaData) {
+
+                mPhotoMetaData = photoMetaData;
 
                 CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(marker.getPosition(), getMap().getCameraPosition().zoom);
 
@@ -133,16 +139,12 @@ public class MarkerMapFragment extends SupportMapFragment implements GoogleMap.O
 
                 getMap().animateCamera(cameraUpdate);
 
-
-                if (placesList != null) {
-                    //marker.setTitle(placesList.get(0).getVicinity());
-                }
-                marker.showInfoWindow();
+                if (mapPinMovedListener !=null) mapPinMovedListener.onPinMoved(mPhotoMetaData);
 
             }
         });
 
-        placesTask.execute(marker.getPosition());
+        placesTask.execute(mPhotoMetaData);
 
         ((ResultActivity)getActivity()).onMapMoved();
     }

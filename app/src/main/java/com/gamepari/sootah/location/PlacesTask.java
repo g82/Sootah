@@ -6,6 +6,7 @@ import android.location.Geocoder;
 import android.os.AsyncTask;
 
 import com.gamepari.sootah.R;
+import com.gamepari.sootah.images.PhotoMetaData;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
@@ -37,7 +38,7 @@ import java.util.Locale;
  */
 
 
-public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
+public class PlacesTask extends AsyncTask<PhotoMetaData, Integer, PhotoMetaData> {
 
     private static final String PLACES_API_URL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
     private static final boolean USE_SENSOR = true;
@@ -53,30 +54,30 @@ public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
     }
 
     @Override
-    protected List<Places> doInBackground(LatLng... latLngs) {
+    protected PhotoMetaData doInBackground(PhotoMetaData... photoMetaDatas) {
 
-        LatLng latLng = latLngs[0];
+        PhotoMetaData photoMetaData = photoMetaDatas[0];
+
+        LatLng latLng = photoMetaData.getLatLng();
 
         List<Places> placesList = getPlacesFromLocation(mContext, latLng);
 
-        if (placesList != null && placesList.size() > 0) return placesList;
+        if (placesList != null && placesList.size() > 0) {
+            photoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
+            photoMetaData.setPlacesList(placesList);
+        }
 
         Address address = getAddressFromLocation(mContext, latLng);
 
         if (address != null) {
-
-            if (placesList == null) placesList = new ArrayList<Places>();
-
-            Places place = new Places();
-            place.setLocation(latLng);
-            place.setVicinity(address.getAddressLine(0));
-
-            placesList.add(place);
-            return placesList;
-
+            if (placesList == null) photoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_GEOCODE);
+            photoMetaData.setAddress(address);
+        }
+        else if (address == null && photoMetaData.getAddressType() != PhotoMetaData.ADDRESS_FROM_PLACESAPI) {
+            return null;
         }
 
-        return null;
+        return photoMetaData;
     }
 
     public static Address getAddressFromLocation(Context context, LatLng latLng) {
@@ -162,11 +163,11 @@ public class PlacesTask extends AsyncTask<LatLng, Integer, List<Places>> {
     }
 
     @Override
-    protected void onPostExecute(List<Places> placeses) {
-        if (mOnPlaceTaskListener != null) mOnPlaceTaskListener.onParseFinished(placeses);
+    protected void onPostExecute(PhotoMetaData photoMetaData) {
+        if (mOnPlaceTaskListener != null) mOnPlaceTaskListener.onParseFinished(photoMetaData.getAddressType(), photoMetaData);
     }
 
     public interface OnPlaceTaskListener {
-        public void onParseFinished(List<Places> placesList);
+        public void onParseFinished(int addressType, PhotoMetaData photoMetaData);
     }
 }

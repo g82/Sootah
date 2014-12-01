@@ -11,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Location;
 import android.location.LocationManager;
+import android.media.Image;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -77,11 +78,15 @@ public class ResultActivity extends ActionBarActivity implements
         setContentView(R.layout.activity_result);
 
         if (savedInstanceState == null) {
+
+            ImageFragment imageFragment = new ImageFragment();
+
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.container, new ImageFragment())
+                    .add(R.id.container, imageFragment)
                     .commit();
 
             MarkerMapFragment mapFragment = new MarkerMapFragment();
+            mapFragment.setMapPinMovedListener(imageFragment);
             getSupportFragmentManager().beginTransaction()
                     .add(R.id.map, mapFragment)
                     .commit();
@@ -140,7 +145,7 @@ public class ResultActivity extends ActionBarActivity implements
 
             else {
                 //gps disabled.
-                Toast.makeText(this, "setting failed...", Toast.LENGTH_LONG).show();
+                //Toast.makeText(this, "setting failed...", Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -168,7 +173,7 @@ public class ResultActivity extends ActionBarActivity implements
             mPhotoMetaData.setLatLng(latLng);
 
             PlacesTask placesTask = new PlacesTask(this, this);
-            placesTask.execute(latLng);
+            placesTask.execute(mPhotoMetaData);
 
         }
 
@@ -183,25 +188,21 @@ public class ResultActivity extends ActionBarActivity implements
         mPhotoMetaData.setLatLng(latLng);
 
         PlacesTask placesTask = new PlacesTask(this,this);
-        placesTask.execute(latLng);
+        placesTask.execute(mPhotoMetaData);
 
     }
 
     @Override
-    public void onParseFinished(List<Places> placesList) {
-
+    public void onParseFinished(int addressType, PhotoMetaData photoMetaData) {
         mLoadingProgress.dismiss();
 
-        if (placesList != null) {
-            mPhotoMetaData.setPlacesList(placesList);
+        if (photoMetaData != null) {
+            mPhotoMetaData = photoMetaData;
             setResultAction(mPhotoMetaData);
         }
         else {
-
-            Toast.makeText(this, "hing...", Toast.LENGTH_LONG).show();
-
+            //cant any get location data.
         }
-
     }
 
     @Override
@@ -243,7 +244,6 @@ public class ResultActivity extends ActionBarActivity implements
     }
 
     private void setResultAction(PhotoMetaData photoMetaData) {
-
         savedUri = null;
         mCaptureView.setDrawingCacheEnabled(false);
 
@@ -302,7 +302,6 @@ public class ResultActivity extends ActionBarActivity implements
                             showDialogTurnOnGPS();
                         } else {
                             // gps enabled.
-
                             initLocationClient();
                         }
                     }
@@ -347,9 +346,12 @@ public class ResultActivity extends ActionBarActivity implements
         }
     }
 
-
     public static interface OnSaveListener {
         public void onSaveFinished(File savedFile);
+    }
+
+    public static interface OnMapPinMovedListener {
+        public void onPinMoved(PhotoMetaData photoMetaData);
     }
 
     private void saveBitmapFile(final OnSaveListener onSaveListener) {
@@ -394,18 +396,19 @@ public class ResultActivity extends ActionBarActivity implements
 
                     if (placesList == null || placesList.size() <= 0) {
 
+                        mPhotoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_GEOCODE);
+
                         Address address = PlacesTask.getAddressFromLocation(ResultActivity.this, latLng);
                         mPhotoMetaData.setAddress(address);
-                        Places places = new Places();
-                        places.setVicinity(address.getAddressLine(0));
-
                     }
                     else {
+                        mPhotoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
                         mPhotoMetaData.setPlacesList(placesList);
                     }
-
+                    return true;
                 }
-                return true;
+                return false;
+
             } catch (IOException e) {
                 Log.d(this.toString(), e.getMessage());
                 return false;
@@ -415,16 +418,16 @@ public class ResultActivity extends ActionBarActivity implements
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
-            super.onPostExecute(aBoolean);
+
             mLoadingProgress.dismiss();
 
             if (aBoolean) {
-                if (mPhotoMetaData.getAddress() != null) {
-                    setResultAction(mPhotoMetaData);
-                }
-                else {
-                    showDialogSetLocation();
-                }
+                setResultAction(mPhotoMetaData);
+            }
+            else {
+                //get Location Data Failed.
+                showDialogSetLocation();
+
             }
         }
     }
@@ -498,11 +501,19 @@ public class ResultActivity extends ActionBarActivity implements
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class ImageFragment extends Fragment {
+    public static class ImageFragment extends Fragment implements OnMapPinMovedListener {
 
         private ImageView ivPhoto;
 
-        public ImageFragment() {
+        public ImageFragment() {}
+
+        @Override
+        public void onPinMoved(PhotoMetaData photoMetaData) {
+
+
+
+
+
         }
 
         @Override
