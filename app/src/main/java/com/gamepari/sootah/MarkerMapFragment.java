@@ -4,7 +4,6 @@ import android.location.Address;
 import android.widget.Toast;
 
 import com.gamepari.sootah.images.PhotoMetaData;
-import com.gamepari.sootah.location.Places;
 import com.gamepari.sootah.location.PlacesTask;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -15,7 +14,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -131,21 +129,35 @@ public class MarkerMapFragment extends SupportMapFragment implements
             @Override
             public void onParseFinished(int addressType, PhotoMetaData photoMetaData) {
 
-                mPhotoMetaData = photoMetaData;
+                switch (addressType) {
+                    case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
 
-                CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(marker.getPosition(), getMap().getCameraPosition().zoom);
+                        PlaceListDialogFragment dialogFragment = new PlaceListDialogFragment();
+                        dialogFragment.setPlacesList(mPhotoMetaData.getPlacesList());
+                        dialogFragment.show(getFragmentManager(), "dialog");
 
-                CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
+                        break;
 
-                getMap().animateCamera(cameraUpdate);
+                    case PhotoMetaData.ADDRESS_FROM_GEOCODE:
 
-                if (mapPinMovedListener !=null) mapPinMovedListener.onPinMoved(mPhotoMetaData);
+                        mPhotoMetaData = photoMetaData;
+
+                        CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(marker.getPosition(), getMap().getCameraPosition().zoom);
+
+                        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
+
+                        getMap().animateCamera(cameraUpdate);
+
+                        if (mapPinMovedListener !=null) mapPinMovedListener.onPinMoved(mPhotoMetaData);
+
+                        break;
+                }
 
             }
         });
 
+        mPhotoMetaData.setLatLng(marker.getPosition());
         placesTask.execute(mPhotoMetaData);
-
         ((ResultActivity)getActivity()).onMapMoved();
     }
 

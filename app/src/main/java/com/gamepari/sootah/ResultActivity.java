@@ -11,7 +11,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.location.Address;
 import android.location.Location;
 import android.location.LocationManager;
-import android.media.Image;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -21,9 +20,13 @@ import android.support.v4.app.Fragment;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.gamepari.sootah.googleplay.GooglePlayServices;
@@ -48,7 +51,7 @@ import java.util.List;
 public class ResultActivity extends ActionBarActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
-        LocationListener, View.OnClickListener, PlacesTask.OnPlaceTaskListener {
+        LocationListener, PlacesTask.OnPlaceTaskListener, PlaceListDialogFragment.OnPlaceClickListener {
 
     private LocationClient mLocationClient;
 
@@ -93,16 +96,37 @@ public class ResultActivity extends ActionBarActivity implements
 
         }
 
-        findViewById(R.id.gallery).setOnClickListener(this);
-        findViewById(R.id.camera).setOnClickListener(this);
-        findViewById(R.id.share).setOnClickListener(this);
-
         mCaptureView = findViewById(R.id.capture_area);
 
         mLoadingProgress = new ProgressDialog(this);
         mLoadingProgress.setMessage("Loading...");
 
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.main_result_activity_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.action_camera:
+                PhotoCommonMethods.photoFromCamera(this);
+                break;
+
+            case R.id.action_gallery:
+                PhotoCommonMethods.photoFromGallery(this, getString(R.string.pick_image));
+                break;
+
+            case R.id.action_share:
+                saveAndShare();
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -168,13 +192,11 @@ public class ResultActivity extends ActionBarActivity implements
             mLocationClient.requestLocationUpdates(locationRequest, this);
         }
         else {
-
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             mPhotoMetaData.setLatLng(latLng);
 
             PlacesTask placesTask = new PlacesTask(this, this);
             placesTask.execute(mPhotoMetaData);
-
         }
 
     }
@@ -198,11 +220,35 @@ public class ResultActivity extends ActionBarActivity implements
 
         if (photoMetaData != null) {
             mPhotoMetaData = photoMetaData;
-            setResultAction(mPhotoMetaData);
+
+            switch (addressType) {
+                case PhotoMetaData.ADDRESS_FROM_GEOCODE:
+                    setResultAction(mPhotoMetaData);
+                    break;
+
+                case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
+
+                    PlaceListDialogFragment dialogFragment = new PlaceListDialogFragment();
+                    dialogFragment.setPlacesList(mPhotoMetaData.getPlacesList());
+                    dialogFragment.show(getSupportFragmentManager(), "dialog");
+                    break;
+            }
         }
         else {
             //cant any get location data.
         }
+    }
+
+    @Override
+    public void onPlaceSelect(Places o) {
+        mPhotoMetaData.setConfirmedPlace(o);
+        mPhotoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
+        setResultAction(mPhotoMetaData);
+    }
+
+    @Override
+    public void onPlaceCancel() {
+
     }
 
     @Override
@@ -223,23 +269,6 @@ public class ResultActivity extends ActionBarActivity implements
             }
         } else {
             GooglePlayServices.showErrorDialog(this, connectionResult.getErrorCode());
-        }
-    }
-
-    @Override
-    public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.gallery:
-                PhotoCommonMethods.photoFromGallery(ResultActivity.this, getString(R.string.pick_image));
-                break;
-
-            case R.id.camera:
-                PhotoCommonMethods.photoFromCamera(ResultActivity.this);
-                break;
-
-            case R.id.share:
-                saveAndShare();
-                break;
         }
     }
 
@@ -504,15 +533,12 @@ public class ResultActivity extends ActionBarActivity implements
     public static class ImageFragment extends Fragment implements OnMapPinMovedListener {
 
         private ImageView ivPhoto;
+        private TextView tvTitle, tvAddress;
 
         public ImageFragment() {}
 
         @Override
         public void onPinMoved(PhotoMetaData photoMetaData) {
-
-
-
-
 
         }
 
@@ -522,12 +548,20 @@ public class ResultActivity extends ActionBarActivity implements
             View rootView = inflater.inflate(R.layout.fragment_result_image, container, false);
 
             ivPhoto = (ImageView) rootView.findViewById(R.id.image);
+            tvTitle = (TextView) rootView.findViewById(R.id.tv_title);
+            tvAddress = (TextView) rootView.findViewById(R.id.tv_address);
 
             return rootView;
         }
 
         public void setImage(PhotoMetaData photoMetaData) {
             new AdjustBitmapTask().execute(photoMetaData);
+            if (photoMetaData.getAddressType() == PhotoMetaData.ADDRESS_FROM_PLACESAPI && photoMetaData.getConfirmedPlace() != null) {
+
+                tvTitle.setText(photoMetaData.getConfirmedPlace().getName());
+                tvAddress.setText(photoMetaData.getConfirmedPlace().getVicinity());
+
+            }
         }
 
         private class AdjustBitmapTask extends AsyncTask<PhotoMetaData, Integer, Bitmap> {

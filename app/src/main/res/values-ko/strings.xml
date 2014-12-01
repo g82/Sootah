@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">수타!</string>
+    <string name="app_name">이거여기</string>
 
     <string name="location_disabled">위치 서비스 사용중지</string>
     <string name="location_disalbed_text">수타!에서 내 위치에 액세스해야 합니다. 위치 서비스를 켜세요.</string>
@@ -16,5 +16,8 @@
     <string name="camera">카메라</string>
     <string name="pick_image">사진 고르기</string>
     <string name="drag_pin_plz">핀을 드래그 해서 움직일 수 있어요!</string>
+    <string name="share">공유</string>
+    <string name="choose_place">장소 선택</string>
+    <string name="not_here">여긴 없어요.</string>
 
 </resources>

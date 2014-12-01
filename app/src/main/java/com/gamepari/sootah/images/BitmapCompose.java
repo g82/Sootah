@@ -56,7 +56,7 @@ public class BitmapCompose {
         else originalWidth = opts.outWidth;
 
         float ratio = (float)originalWidth / TARGET_WIDTH;
-        //TODO RATIO calculation
+
         opts.inSampleSize = (int)ratio;
         opts.inJustDecodeBounds = false;
 

@@ -26,6 +26,7 @@ import java.util.Locale;
  * ?location=36.9483674,127.9048024
  * &radius=30&sensor=true
  * &types=establishment
+ * &language=en
  * &key=AIzaSyCPg-IE7BRkZyCRJP1R264JfSV3IijXsw0
  *
  *
@@ -122,7 +123,7 @@ public class PlacesTask extends AsyncTask<PhotoMetaData, Integer, PhotoMetaData>
 
             if (status.equals("OK")) {
 
-                List<Places> placesList = new ArrayList<Places>();
+                List<Places> placesList = new ArrayList<>();
 
                 //using Places API.
 

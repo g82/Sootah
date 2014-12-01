@@ -2,9 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:id="@+id/action_search"
-        android:title="search"
-        android:icon="@android:drawable/ic_menu_search"
+    <item android:id="@+id/action_camera"
+        android:title="@string/camera"
+        android:icon="@drawable/ic_action_camera"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_gallery"
+        android:title="@string/album"
+        android:icon="@drawable/ic_action_picture"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_share"
+        android:title="@string/share"
+        android:icon="@drawable/ic_action_share"
         app:showAsAction="ifRoom"/>
 
 </menu>

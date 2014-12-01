@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="@dimen/cell_height"
+    android:paddingLeft="@dimen/cell_padding_left"
+    android:paddingRight="@dimen/cell_padding_left"
+    android:paddingBottom="@dimen/cell_padding_topbottom"
+    android:paddingTop="@dimen/cell_padding_topbottom"
+    android:gravity="center_vertical"
+    >
+
+    <TextView
+        android:id="@+id/cell_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:singleLine="true"
+        android:textScaleX="0.98"
+        android:text="조금느린카페"
+        android:textColor="@android:color/black"
+        android:layout_marginBottom="@dimen/cell_text_margin"
+        android:textSize="@dimen/cell_font_primary"/>
+
+    <TextView
+        android:id="@+id/cell_address"
+        android:text="서울시 동대문구 전농2동 60-146"
+        android:textSize="@dimen/cell_font_secondary"
+        android:textScaleX="0.98"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:singleLine="true" />
+
+</LinearLayout>

@@ -1,7 +1,6 @@
 package com.gamepari.sootah.images;
 
 import android.location.Address;
-import android.location.Location;
 
 import com.gamepari.sootah.location.Places;
 import com.google.android.gms.maps.model.LatLng;
@@ -25,6 +24,16 @@ public class PhotoMetaData {
     private Address address;
 
     private List<Places> placesList;
+
+    private Places confirmedPlace;
+
+    public Places getConfirmedPlace() {
+        return confirmedPlace;
+    }
+
+    public void setConfirmedPlace(Places confirmedPlace) {
+        this.confirmedPlace = confirmedPlace;
+    }
 
     public int getAddressType() {
         return addressType;
