@@ -1,10 +1,8 @@
 package com.gamepari.sootah;
 
 import android.app.Activity;
-import android.widget.Toast;
 
 import com.gamepari.sootah.images.PhotoMetaData;
-import com.gamepari.sootah.location.PlacesTask;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -21,8 +19,9 @@ public class MarkerMapFragment extends SupportMapFragment implements
         GoogleMap.OnMarkerDragListener {
 
     private Marker marker;
-    private PhotoMetaData mPhotoMetaData;
     private MarkerDragListener markerDragListener;
+
+    private boolean isUserMarkerDraged = false;
 
     @Override
     public void onAttach(Activity activity) {
@@ -41,9 +40,7 @@ public class MarkerMapFragment extends SupportMapFragment implements
         getMap().snapshot(snapshotReadyCallback);
     }
 
-    public void highlightMapFromLatLng(final PhotoMetaData photoMetaData) {
-
-        mPhotoMetaData = photoMetaData;
+    public void highlightMap(final PhotoMetaData photoMetaData) {
 
         final LatLng latLng = photoMetaData.getLatLng();
 
@@ -72,13 +69,10 @@ public class MarkerMapFragment extends SupportMapFragment implements
 
         });
 
-        Toast.makeText(getActivity(), R.string.drag_pin_plz, Toast.LENGTH_LONG).show();
-
     }
 
     @Override
     public void onMarkerDragStart(Marker marker) {
-        marker.hideInfoWindow();
     }
 
     @Override
@@ -89,39 +83,6 @@ public class MarkerMapFragment extends SupportMapFragment implements
     public void onMarkerDragEnd(final Marker marker) {
 
         markerDragListener.onMarkerPositionChanged(marker.getPosition());
-
-        PlacesTask placesTask = new PlacesTask(getActivity(), new PlacesTask.OnPlaceTaskListener() {
-            @Override
-            public void onPlacesTaskFinished(int addressType, PhotoMetaData photoMetaData) {
-
-                switch (addressType) {
-                    case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
-
-                        PlaceListDialogFragment dialogFragment = new PlaceListDialogFragment();
-                        dialogFragment.setPlacesList(mPhotoMetaData.getPlacesList());
-                        dialogFragment.show(getFragmentManager(), "dialog");
-
-                        break;
-
-                    case PhotoMetaData.ADDRESS_FROM_GEOCODE:
-
-                        mPhotoMetaData = photoMetaData;
-
-                        CameraPosition cameraPosition = CameraPosition.fromLatLngZoom(marker.getPosition(), getMap().getCameraPosition().zoom);
-
-                        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
-
-                        getMap().animateCamera(cameraUpdate);
-
-                        break;
-                }
-
-            }
-        });
-
-        mPhotoMetaData.setLatLng(marker.getPosition());
-        placesTask.execute(mPhotoMetaData);
-
     }
 
     public interface MarkerDragListener {
@@ -129,6 +90,5 @@ public class MarkerMapFragment extends SupportMapFragment implements
         public void onMarkerPositionChanged(LatLng latLng);
 
     }
-
 
 }

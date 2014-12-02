@@ -8,14 +8,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.Address;
 import android.os.AsyncTask;
-import android.util.Log;
 
-import com.gamepari.sootah.location.Places;
-import com.gamepari.sootah.location.PlacesTask;
+import com.gamepari.sootah.location.GeoCodingTask;
 import com.google.android.gms.maps.model.LatLng;
-
-import java.io.IOException;
-import java.util.List;
 
 /**
  * Read MetaData exist Photo from SDCard
@@ -47,41 +42,28 @@ public class MetaDataTask extends AsyncTask<Object, Integer, PhotoMetaData> {
 
         LatLng latLng = null;
 
-        // try extract metadata from image file.
         try {
             metaData = PhotoCommonMethods.getMetaDataFromURI(mContext, requestCode, data);
-            if (metaData == null) return null;
 
             latLng = metaData.getLatLng();
 
             if (latLng != null) {
                 //more insert place data.
 
-                List<Places> placesList = PlacesTask.getPlacesFromLocation(mContext, latLng);
-
-                if (placesList != null && placesList.size() > 0) {
-                    metaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
-                    metaData.setPlacesList(placesList);
-                }
-
-                Address address = PlacesTask.getAddressFromLocation(mContext, latLng);
+                Address address = GeoCodingTask.getAddressFromLocation(mContext, latLng);
 
                 if (address != null) {
-                    if (metaData.getAddressType() != PhotoMetaData.ADDRESS_FROM_PLACESAPI) {
-                        metaData.setAddressType(PhotoMetaData.ADDRESS_FROM_GEOCODE);
-                    }
                     metaData.setAddress(address);
+
                 }
             }
 
-            return metaData;
-
-        } catch (IOException e) {
-            Log.d(this.toString(), e.getMessage());
-            return null;
         } catch (IllegalStateException e) {
+            //camera photo not exist.
             return null;
         }
+
+        return metaData;
 
     }
 

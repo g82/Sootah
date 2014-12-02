@@ -8,7 +8,9 @@ import android.graphics.Paint;
 /**
  * Created by seokceed on 2014-11-23.
  */
-public class BitmapCompose {
+public class ComposeBitmap {
+
+    private static final float TARGET_WIDTH = 720.f;
 
     public static final Bitmap composeBitmap(Bitmap mainBitmap, Bitmap mapBitmap, PhotoMetaData photoMetaData) {
 
@@ -21,7 +23,7 @@ public class BitmapCompose {
 
         Paint p = new Paint();
 
-        canvas.drawBitmap(mapBitmap, (float)startMapX, (float)startMapY, p);
+        canvas.drawBitmap(mapBitmap, (float) startMapX, (float) startMapY, p);
 
         return mainBitmap;
     }
@@ -38,9 +40,6 @@ public class BitmapCompose {
         return scaledBitmap;
     }
 
-
-    private static final float TARGET_WIDTH = 720.f;
-
     public static final Bitmap adjustBitmap(PhotoMetaData photoMetaData) {
 
         BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -52,12 +51,11 @@ public class BitmapCompose {
         int originalWidth = 0;
         if (photoMetaData.getOrientation_degree() == 90 || photoMetaData.getOrientation_degree() == 270) {
             originalWidth = opts.outHeight;
-        }
-        else originalWidth = opts.outWidth;
+        } else originalWidth = opts.outWidth;
 
-        float ratio = (float)originalWidth / TARGET_WIDTH;
+        float ratio = (float) originalWidth / TARGET_WIDTH;
 
-        opts.inSampleSize = (int)ratio;
+        opts.inSampleSize = (int) ratio;
         opts.inJustDecodeBounds = false;
 
         Bitmap bitmap = BitmapFactory.decodeFile(photoMetaData.getFilePath(), opts);
@@ -66,9 +64,7 @@ public class BitmapCompose {
         if (rotatedBitmap != null) {
             PhotoCommonMethods.recycleBitmap(bitmap);
             return rotatedBitmap;
-        }
-
-        else {
+        } else {
             return bitmap;
         }
     }

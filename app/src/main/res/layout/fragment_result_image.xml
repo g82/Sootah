@@ -11,6 +11,7 @@
         android:scaleType="centerCrop" />
 
     <LinearLayout
+        android:id="@+id/ll_modify"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#50000000"

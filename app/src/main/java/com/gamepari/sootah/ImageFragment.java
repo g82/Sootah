@@ -15,21 +15,21 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.gamepari.sootah.images.BitmapCompose;
+import com.gamepari.sootah.images.ComposeBitmap;
 import com.gamepari.sootah.images.PhotoCommonMethods;
 import com.gamepari.sootah.images.PhotoMetaData;
 
 /**
  * A placeholder fragment containing a simple view.
  */
-public class ImageFragment extends Fragment implements InputDialogFragment.InputDialogListener {
+public class ImageFragment extends Fragment {
 
     private ImageView ivPhoto;
-    private TextView tvTitle, tvAddress;
+    private TextView tvPlace, tvAddress;
+    private View llModify;
 
     public ImageFragment() {
     }
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -37,49 +37,50 @@ public class ImageFragment extends Fragment implements InputDialogFragment.Input
         View rootView = inflater.inflate(R.layout.fragment_result_image, container, false);
 
         ivPhoto = (ImageView) rootView.findViewById(R.id.image);
-        tvTitle = (TextView) rootView.findViewById(R.id.tv_title);
+        tvPlace = (TextView) rootView.findViewById(R.id.tv_title);
         tvAddress = (TextView) rootView.findViewById(R.id.tv_address);
+        llModify = rootView.findViewById(R.id.ll_modify);
+        llModify.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                InputDialogFragment dialogFragment = new InputDialogFragment();
+                dialogFragment.show(getFragmentManager(), "dialog");
+            }
+        });
 
         return rootView;
     }
 
-    @Override
-    public void onDialogInputed(String text) {
-        tvTitle.setText(text);
-    }
+    public void setImageAndText(PhotoMetaData photoMetaData) {
 
-    public void setImage(PhotoMetaData photoMetaData) {
+        if (photoMetaData.getPlaceName() != null && !photoMetaData.getPlaceName().equals("")) {
+            tvPlace.setVisibility(View.VISIBLE);
+            tvPlace.setText(photoMetaData.getPlaceName());
+        } else {
+            tvPlace.setVisibility(View.GONE);
+        }
+
+        if (photoMetaData.getAddressText() != null && !photoMetaData.getAddressText().equals("")) {
+            tvAddress.setVisibility(View.VISIBLE);
+            tvAddress.setText(photoMetaData.getAddressText());
+        } else {
+            tvAddress.setVisibility(View.GONE);
+        }
+
+        if (tvPlace.getVisibility() == View.GONE && tvAddress.getVisibility() == View.GONE) {
+            llModify.setVisibility(View.GONE);
+        } else {
+            llModify.setVisibility(View.VISIBLE);
+        }
 
         new AdjustBitmapTask().execute(photoMetaData);
-
-        switch (photoMetaData.getAddressType()) {
-            case PhotoMetaData.ADDRESS_FROM_GEOCODE:
-                InputDialogFragment dialogFragment = new InputDialogFragment();
-                dialogFragment.show(getFragmentManager(), "dialog");
-                tvAddress.setText(photoMetaData.getAddressString());
-                break;
-
-            case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
-
-                break;
-
-            case PhotoMetaData.ADDRESS_NONE:
-                break;
-        }
-
-        if (photoMetaData.getAddressType() == PhotoMetaData.ADDRESS_FROM_PLACESAPI && photoMetaData.getConfirmedPlace() != null) {
-
-            tvTitle.setText(photoMetaData.getConfirmedPlace().getName());
-            tvAddress.setText(photoMetaData.getConfirmedPlace().getVicinity());
-
-        }
     }
 
     private class AdjustBitmapTask extends AsyncTask<PhotoMetaData, Integer, Bitmap> {
 
         @Override
         protected Bitmap doInBackground(PhotoMetaData... metaDatas) {
-            Bitmap resultBitmap = BitmapCompose.adjustBitmap(metaDatas[0]);
+            Bitmap resultBitmap = ComposeBitmap.adjustBitmap(metaDatas[0]);
             return resultBitmap;
         }
 

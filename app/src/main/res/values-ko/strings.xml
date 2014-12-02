@@ -22,6 +22,8 @@
     <string name="plz_start">사진을 촬영하거나 가져오세요.</string>
     <string name="loading">불러오는 중&#8230;</string>
     <string name="inputdialog_title">여기는</string>
-    <string name="inputdialog_hint">장소 이름을 입력하세요.</string>
+    <string name="inputdialog_hint_address">주소를 입력하세요.</string>
+    <string name="inputdialog_hint_place">장소 이름을 입력하세요.</string>
+    <string name="saved_album">이미지가 저장되었습니다.</string>
 
 </resources>

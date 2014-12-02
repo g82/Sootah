@@ -8,7 +8,10 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.EditText;
+
+import com.gamepari.sootah.images.PhotoMetaData;
 
 /**
  * Created by seokceed on 2014-12-02.
@@ -16,13 +19,12 @@ import android.widget.EditText;
 public class InputDialogFragment extends DialogFragment {
 
     InputDialogListener inputDialogListener;
-    private EditText etText;
+    private EditText etPlace, etAddress;
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        ImageFragment imageFragment = (ImageFragment) (((ResultActivity) activity).getSupportFragmentManager().findFragmentById(R.id.container));
-        inputDialogListener = imageFragment;
+        inputDialogListener = (InputDialogListener) activity;
     }
 
     @NonNull
@@ -33,7 +35,7 @@ public class InputDialogFragment extends DialogFragment {
         builder.setPositiveButton(R.string.apply, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                inputDialogListener.onDialogInputed(etText.getText().toString());
+                inputDialogListener.onDialogInputed(etPlace.getText().toString(), etAddress.getText().toString());
             }
         });
         builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -45,14 +47,24 @@ public class InputDialogFragment extends DialogFragment {
         builder.setTitle(getString(R.string.inputdialog_title));
 
         LayoutInflater inflater = getActivity().getLayoutInflater();
-        etText = (EditText) inflater.inflate(R.layout.inputdialog_edittext, null);
-        builder.setView(etText);
+        View v = inflater.inflate(R.layout.fragment_inputdialog, null);
+
+        etPlace = (EditText) v.findViewById(R.id.et_place);
+        etAddress = (EditText) v.findViewById(R.id.et_address);
+
+        PhotoMetaData metaData = ((ResultActivity) getActivity()).getPhotoMetaData();
+        if (metaData.getPlaceName() != null) {
+            etPlace.setText(metaData.getPlaceName());
+        }
+        etAddress.setText(metaData.convertAddressString());
+
+        builder.setView(v);
 
         return builder.create();
     }
 
     public interface InputDialogListener {
-        public void onDialogInputed(String text);
+        public void onDialogInputed(String place, String address);
     }
 
 }

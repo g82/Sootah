@@ -14,6 +14,7 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 
+import com.gamepari.sootah.R;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
@@ -65,18 +66,22 @@ public class PhotoCommonMethods {
         Intent shareIntent = new Intent();
         shareIntent.setAction(Intent.ACTION_SEND);
         shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, photoMetaData.getAddressString());
+        shareIntent.putExtra(Intent.EXTRA_TEXT, photoMetaData.convertAddressString());
         shareIntent.setType("image/*");
-        activity.startActivity(Intent.createChooser(shareIntent, "choose"));
+        activity.startActivity(Intent.createChooser(shareIntent, activity.getString(R.string.share)));
     }
 
-    /** Create a file Uri for saving an image or video */
-    public static Uri getOutputMediaFileUri(int type){
+    /**
+     * Create a file Uri for saving an image or video
+     */
+    public static Uri getOutputMediaFileUri(int type) {
         return Uri.fromFile(getOutputMediaFile(type));
     }
 
-    /** Create a File for saving an image or video */
-    public static File getOutputMediaFile(int type){
+    /**
+     * Create a File for saving an image or video
+     */
+    public static File getOutputMediaFile(int type) {
         // To be safe, you should check that the SDCard is mounted
         // using Environment.getExternalStorageState() before doing this.
 
@@ -85,8 +90,8 @@ public class PhotoCommonMethods {
         // between applications and persist after your app has been uninstalled.
 
         // Create the storage directory if it does not exist
-        if (! mediaStorageDir.exists()){
-            if (! mediaStorageDir.mkdirs()){
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
                 Log.d("file error", "failed to create directory");
                 return null;
             }
@@ -97,9 +102,9 @@ public class PhotoCommonMethods {
         String timeStamp = format.format(new Date());
 
         File mediaFile;
-        if (type == MEDIA_TYPE_IMAGE){
+        if (type == MEDIA_TYPE_IMAGE) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".jpg");
-        } else if(type == MEDIA_TYPE_VIDEO) {
+        } else if (type == MEDIA_TYPE_VIDEO) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".mp4");
         } else {
             return null;
@@ -108,15 +113,14 @@ public class PhotoCommonMethods {
         return mediaFile;
     }
 
-    private static String getFilePathFromURI(Context context, Uri uri) throws IllegalStateException{
+    public static String getFilePathFromURI(Context context, Uri uri) throws IllegalStateException {
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
         if (cursor != null && cursor.moveToFirst()) {
             String filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
             cursor.close();
             return filePath;
-        }
-        else {
+        } else {
             throw new IllegalStateException("Column does not exist.");
         }
     }
@@ -130,14 +134,14 @@ public class PhotoCommonMethods {
 
             int num1Lat = (int) Math.floor(latLng.latitude);
             int num2Lat = (int) Math.floor((latLng.latitude - num1Lat) * 60);
-            double num3Lat = (latLng.latitude - ((double)num1Lat+((double)num2Lat/60))) * 3600000;
+            double num3Lat = (latLng.latitude - ((double) num1Lat + ((double) num2Lat / 60))) * 3600000;
 
-            int num1Lon = (int)Math.floor(latLng.longitude);
-            int num2Lon = (int)Math.floor((latLng.longitude - num1Lon) * 60);
-            double num3Lon = (latLng.longitude - ((double)num1Lon+((double)num2Lon/60))) * 3600000;
+            int num1Lon = (int) Math.floor(latLng.longitude);
+            int num2Lon = (int) Math.floor((latLng.longitude - num1Lon) * 60);
+            double num3Lon = (latLng.longitude - ((double) num1Lon + ((double) num2Lon / 60))) * 3600000;
 
-            exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, num1Lat+"/1,"+num2Lat+"/1,"+num3Lat+"/1000");
-            exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, num1Lon+"/1,"+num2Lon+"/1,"+num3Lon+"/1000");
+            exif.setAttribute(ExifInterface.TAG_GPS_LATITUDE, num1Lat + "/1," + num2Lat + "/1," + num3Lat + "/1000");
+            exif.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, num1Lon + "/1," + num2Lon + "/1," + num3Lon + "/1000");
 
 
             if (latLng.latitude > 0) {
@@ -162,21 +166,35 @@ public class PhotoCommonMethods {
     }
 
 
+    public static PhotoMetaData getMetaDataFromURI(Context context, int requestCode, Intent imageData) throws IllegalStateException {
 
-    public static PhotoMetaData getMetaDataFromURI(Context context, int requestCode, Intent imageData) throws IOException {
-
-        PhotoMetaData photoMetaData = null;
+        PhotoMetaData photoMetaData = new PhotoMetaData();
         String filePath = null;
 
-        if (requestCode == REQ_CAMERA) filePath = CAMERA_URI.getPath();
-        else if (requestCode == REQ_GALLERY) filePath = getFilePathFromURI(context, imageData.getData());
+        if (imageData == null) {
+            filePath = PhotoCommonMethods.CAMERA_URI.getPath();
+        } else {
+            if (imageData.getDataString().contains("content://")) {
+                filePath = getFilePathFromURI(context, imageData.getData());
+            } else {
+                filePath = imageData.getDataString();
+            }
+        }
 
-        ExifInterface exif = new ExifInterface(filePath);
+
+//        if (requestCode == REQ_CAMERA) filePath = CAMERA_URI.getPath();
+//        else if (requestCode == REQ_GALLERY) filePath = getFilePathFromURI(context, imageData.getData());
+
+        photoMetaData.setFilePath(filePath);
+
+        ExifInterface exif = null;
+        try {
+            exif = new ExifInterface(filePath);
+        } catch (IOException e) {
+            return photoMetaData;
+        }
 
         if (exif != null) {
-
-            photoMetaData = new PhotoMetaData();
-            photoMetaData.setFilePath(filePath);
 
             int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, -1);
 
@@ -203,16 +221,12 @@ public class PhotoCommonMethods {
             float[] output = {0.f, 0.f};
 
             if (exif.getLatLong(output)) {
-                LatLng latLng = new LatLng(output[0],output[1]);
+                LatLng latLng = new LatLng(output[0], output[1]);
                 photoMetaData.setLatLng(latLng);
             }
-
-            return photoMetaData;
         }
 
-        else {
-            return null;
-        }
+        return photoMetaData;
     }
 
     public static boolean deleteFileFromUri(Uri uri) {
@@ -235,8 +249,7 @@ public class PhotoCommonMethods {
 
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.GINGERBREAD) {
             bitmap.recycle();
-        }
-        else {
+        } else {
             bitmap = null;
         }
     }
@@ -262,7 +275,7 @@ public class PhotoCommonMethods {
 
         if (degrees != 0 && bitmap != null) {
             Matrix m = new Matrix();
-            m.setRotate(degrees, (float)bitmap.getWidth()/2, (float)bitmap.getHeight()/2);
+            m.setRotate(degrees, (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
 
             rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
 
@@ -270,7 +283,6 @@ public class PhotoCommonMethods {
 
         return rotatedBitmap;
     }
-
 
 
 }

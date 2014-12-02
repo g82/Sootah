@@ -45,8 +45,8 @@ public class CaptureBitmapTask extends AsyncTask<Object, Integer, File> {
         View captureView = (View) params[2];
 
         Bitmap workBitmap = PhotoCommonMethods.bitmapFromView(captureView);
-        BitmapCompose.composeBitmap(workBitmap, mapBitmap, photoMetaData);
-        Bitmap scaledBitmap = BitmapCompose.resizeBitmap(workBitmap);
+        ComposeBitmap.composeBitmap(workBitmap, mapBitmap, photoMetaData);
+        Bitmap scaledBitmap = ComposeBitmap.resizeBitmap(workBitmap);
 
         File bitmapFile = null;
         boolean isSuccess = false;

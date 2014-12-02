@@ -33,6 +33,9 @@
 
     <string name="inputdialog_title">Here is</string>
 
-    <string name="inputdialog_hint">Put the place name.</string>
+    <string name="inputdialog_hint_place">Put the place name.</string>
+    <string name="inputdialog_hint_address">Put the address.</string>
+
+    <string name="saved_album">Image saved.</string>
 
 </resources>

@@ -24,8 +24,7 @@ import com.gamepari.sootah.images.CaptureBitmapTask;
 import com.gamepari.sootah.images.MetaDataTask;
 import com.gamepari.sootah.images.PhotoCommonMethods;
 import com.gamepari.sootah.images.PhotoMetaData;
-import com.gamepari.sootah.location.Places;
-import com.gamepari.sootah.location.PlacesTask;
+import com.gamepari.sootah.location.GeoCodingTask;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
@@ -36,15 +35,16 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class ResultActivity extends ActionBarActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
-        GooglePlayServicesClient.OnConnectionFailedListener,
+        GooglePlayServicesClient.OnConnectionFailedListener, LocationListener,
         GoogleMap.OnCameraChangeListener, MarkerMapFragment.MarkerDragListener,
-        LocationListener,
-        PlacesTask.OnPlaceTaskListener, CaptureBitmapTask.OnSaveListener,
-        PlaceListDialogFragment.OnPlaceClickListener, MetaDataTask.OnMetaTaskListener {
+        GeoCodingTask.OnPlaceTaskListener, CaptureBitmapTask.OnSaveListener, MetaDataTask.OnMetaTaskListener,
+        InputDialogFragment.InputDialogListener {
 
     private static final int REQ_SETTINGS_GPS = 1233;
     private LocationClient mLocationClient;
@@ -53,6 +53,13 @@ public class ResultActivity extends ActionBarActivity implements
     private PhotoMetaData mPhotoMetaData;
     private Uri savedUri = null;
 
+    private List<Uri> listTempFileUris;
+    /**
+     * location changed by user, so rerun geocoding. ->2
+     */
+
+    private boolean isUserMarkerDraged = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -60,9 +67,7 @@ public class ResultActivity extends ActionBarActivity implements
 
         if (requestCode == PhotoCommonMethods.REQ_CAMERA) {
             PhotoCommonMethods.photoFromCamera(this);
-        }
-
-        else if (requestCode == PhotoCommonMethods.REQ_GALLERY) {
+        } else if (requestCode == PhotoCommonMethods.REQ_GALLERY) {
             PhotoCommonMethods.photoFromGallery(this, getString(R.string.pick_image));
         }
 
@@ -122,10 +127,24 @@ public class ResultActivity extends ActionBarActivity implements
         super.onStop();
     }
 
-    //TODO temp Camera File delete all.
-
     @Override
     protected void onDestroy() {
+
+        for (Uri tempFileUri : listTempFileUris) {
+
+            new File(tempFileUri.getPath()).delete();
+
+            /*try {
+                String filePath = PhotoCommonMethods.getFilePathFromURI(this, tempFileUri);
+                if (filePath!=null) {
+                    new File(filePath).delete();
+                }
+
+            } catch (IllegalStateException e) {
+                continue;
+            }*/
+        }
+
         super.onDestroy();
     }
 
@@ -133,6 +152,11 @@ public class ResultActivity extends ActionBarActivity implements
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (requestCode == PhotoCommonMethods.REQ_CAMERA || requestCode == PhotoCommonMethods.REQ_GALLERY) {
+
+            if (requestCode == PhotoCommonMethods.REQ_CAMERA) {
+                if (listTempFileUris == null) listTempFileUris = new ArrayList<>();
+                listTempFileUris.add(PhotoCommonMethods.CAMERA_URI);
+            }
 
             if (resultCode == RESULT_OK) {
 
@@ -147,9 +171,7 @@ public class ResultActivity extends ActionBarActivity implements
             if (manager.isProviderEnabled(LocationManager.GPS_PROVIDER) || manager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 //gps enabled.
                 initLocationClient();
-            }
-
-            else {
+            } else {
                 //gps disabled.
             }
 
@@ -160,10 +182,10 @@ public class ResultActivity extends ActionBarActivity implements
         }
     }
 
-
     /**
      * ------------------------------------------------------------
      * 1. first process!! get image, read MetaData..
+     * if image EXIF location data exist, goto third Process. 1->3
      * ------------------------------------------------------------
      */
 
@@ -175,19 +197,24 @@ public class ResultActivity extends ActionBarActivity implements
     @Override
     public void onMetaDataTaskFinished(PhotoMetaData photoMetaData) {
 
+        PhotoCommonMethods.CAMERA_URI = null;
+
         mLoadingProgress.dismiss();
+
+        if (photoMetaData == null) {
+            //TODO get Image Failed.
+            return;
+        }
 
         mPhotoMetaData = photoMetaData;
 
-        int addressType = photoMetaData.getAddressType();
-
-        if (addressType == PhotoMetaData.ADDRESS_FROM_PLACESAPI || addressType == PhotoMetaData.ADDRESS_FROM_GEOCODE) {
-            setResultAction(photoMetaData);
+        if (photoMetaData.getAddress() != null) {
+            // exist location data
+            showInputDialogFragment();
         } else {
-            //get Location Data Failed.
+            // no location data
             showDialogSetLocation();
         }
-
     }
 
     /**
@@ -197,34 +224,56 @@ public class ResultActivity extends ActionBarActivity implements
      * ------------------------------------------------------------
      */
 
-
     @Override
-    public void onPlacesTaskFinished(int addressType, PhotoMetaData photoMetaData) {
+    public void onGeoCodingFinished(PhotoMetaData photoMetaData) {
         mLoadingProgress.dismiss();
-        mPhotoMetaData = photoMetaData;
-        setResultAction(photoMetaData);
-    }
+        //mPhotoMetaData = photoMetaData;
 
+        if (photoMetaData.getPlaceName() == null || photoMetaData.getPlaceName().equals("")) {
+            showInputDialogFragment();
+        } else {
+            setImageAndMap(photoMetaData);
+        }
+
+    }
 
     /**
      * ------------------------------------------------------------
-     * 3.Third process!! setResultAction
+     * 3.Third process!! showInputDialogFragment
      *
-     * highlightMapFromLatLng,
+     * highlightMap,
      *
-     * setImage.
+     * setImageAndText.
      * ------------------------------------------------------------
      */
 
-    private void setResultAction(PhotoMetaData photoMetaData) {
+    private void showInputDialogFragment() {
+        InputDialogFragment dialogFragment = new InputDialogFragment();
+        dialogFragment.show(getSupportFragmentManager(), "dialog");
+    }
 
-        deleteSavedFile();
+    @Override
+    public void onDialogInputed(String placeName, String adressText) {
+        mPhotoMetaData.setPlaceName(placeName);
+        mPhotoMetaData.setAddressText(adressText);
+
+        setImageAndMap(mPhotoMetaData);
+    }
+
+    private void setImageAndMap(PhotoMetaData photoMetaData) {
+
+        deleteBeforeSavedFile();
+
+        if (isUserMarkerDraged) {
+            photoMetaData.setAddressText(photoMetaData.convertAddressString());
+            isUserMarkerDraged = false;
+        }
 
         ImageFragment imageFragment = (ImageFragment) getSupportFragmentManager().findFragmentById(R.id.container);
-        imageFragment.setImage(photoMetaData);
+        imageFragment.setImageAndText(photoMetaData);
 
         MarkerMapFragment mapFragment = getMapFragment();
-        mapFragment.highlightMapFromLatLng(photoMetaData);
+        mapFragment.highlightMap(photoMetaData);
 
         findViewById(R.id.rl_none).setVisibility(View.GONE);
     }
@@ -232,32 +281,22 @@ public class ResultActivity extends ActionBarActivity implements
     // google map camera changed, savedUri = null.
     @Override
     public void onCameraChange(CameraPosition cameraPosition) {
-        deleteSavedFile();
+        deleteBeforeSavedFile();
     }
 
     @Override
     public void onMarkerPositionChanged(LatLng latLng) {
-        deleteSavedFile();
 
-        mPhotoMetaData.clearPlaceData();
+        isUserMarkerDraged = true;
+
+        deleteBeforeSavedFile();
+        mPhotoMetaData.clearLocationData();
         mPhotoMetaData.setLatLng(latLng);
+        new GeoCodingTask(this, this).execute(mPhotoMetaData);
     }
 
 
-    @Override
-    public void onPlaceSelect(Places o) {
-        mPhotoMetaData.setConfirmedPlace(o);
-        mPhotoMetaData.setAddressType(PhotoMetaData.ADDRESS_FROM_PLACESAPI);
-        setResultAction(mPhotoMetaData);
-    }
-
-    @Override
-    public void onPlaceCancel() {
-
-    }
-
-
-    private void deleteSavedFile() {
+    private void deleteBeforeSavedFile() {
         savedUri = null;
         if (savedUri != null) PhotoCommonMethods.deleteFileFromUri(savedUri);
     }
@@ -291,10 +330,13 @@ public class ResultActivity extends ActionBarActivity implements
 
             mPhotoMetaData.setLatLng(latLng);
 
-            PlacesTask placesTask = new PlacesTask(this, this);
-            placesTask.execute(mPhotoMetaData);
+            GeoCodingTask geoCodingTask = new GeoCodingTask(this, this);
+            geoCodingTask.execute(mPhotoMetaData);
         }
+    }
 
+    public PhotoMetaData getPhotoMetaData() {
+        return mPhotoMetaData;
     }
 
     @Override
@@ -305,8 +347,8 @@ public class ResultActivity extends ActionBarActivity implements
 
         mPhotoMetaData.setLatLng(latLng);
 
-        PlacesTask placesTask = new PlacesTask(this, this);
-        placesTask.execute(mPhotoMetaData);
+        GeoCodingTask geoCodingTask = new GeoCodingTask(this, this);
+        geoCodingTask.execute(mPhotoMetaData);
     }
 
     @Override
@@ -413,6 +455,8 @@ public class ResultActivity extends ActionBarActivity implements
     public void onSaveFinished(File savedFile) {
 
         mLoadingProgress.dismiss();
+
+        Toast.makeText(this, getString(R.string.saved_album), Toast.LENGTH_LONG).show();
 
         if (savedFile != null) {
             Uri fileUri = Uri.fromFile(savedFile);

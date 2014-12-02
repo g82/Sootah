@@ -16,7 +16,7 @@
 
     <dimen name="cell_text_margin">4dp</dimen>
 
-    <dimen name="cell_font_primary">16sp</dimen>
+    <dimen name="cell_font_primary">18sp</dimen>
     <dimen name="cell_font_secondary">14sp</dimen>
 
 </resources>
