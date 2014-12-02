@@ -31,4 +31,8 @@
 
     <string name="loading">Loading&#8230;</string>
 
+    <string name="inputdialog_title">Here is</string>
+
+    <string name="inputdialog_hint">Put the place name.</string>
+
 </resources>

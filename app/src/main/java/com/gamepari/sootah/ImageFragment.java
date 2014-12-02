@@ -22,7 +22,7 @@ import com.gamepari.sootah.images.PhotoMetaData;
 /**
  * A placeholder fragment containing a simple view.
  */
-public class ImageFragment extends Fragment {
+public class ImageFragment extends Fragment implements InputDialogFragment.InputDialogListener {
 
     private ImageView ivPhoto;
     private TextView tvTitle, tvAddress;
@@ -43,9 +43,29 @@ public class ImageFragment extends Fragment {
         return rootView;
     }
 
+    @Override
+    public void onDialogInputed(String text) {
+        tvTitle.setText(text);
+    }
+
     public void setImage(PhotoMetaData photoMetaData) {
 
         new AdjustBitmapTask().execute(photoMetaData);
+
+        switch (photoMetaData.getAddressType()) {
+            case PhotoMetaData.ADDRESS_FROM_GEOCODE:
+                InputDialogFragment dialogFragment = new InputDialogFragment();
+                dialogFragment.show(getFragmentManager(), "dialog");
+                tvAddress.setText(photoMetaData.getAddressString());
+                break;
+
+            case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
+
+                break;
+
+            case PhotoMetaData.ADDRESS_NONE:
+                break;
+        }
 
         if (photoMetaData.getAddressType() == PhotoMetaData.ADDRESS_FROM_PLACESAPI && photoMetaData.getConfirmedPlace() != null) {
 

@@ -122,6 +122,13 @@ public class ResultActivity extends ActionBarActivity implements
         super.onStop();
     }
 
+    //TODO temp Camera File delete all.
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
@@ -156,7 +163,7 @@ public class ResultActivity extends ActionBarActivity implements
 
     /**
      * ------------------------------------------------------------
-     * first process!! get image, read MetaData..
+     * 1. first process!! get image, read MetaData..
      * ------------------------------------------------------------
      */
 
@@ -185,7 +192,7 @@ public class ResultActivity extends ActionBarActivity implements
 
     /**
      * ------------------------------------------------------------
-     * second process!! no metadata, turn on GPS, find address or places.
+     * 2. second process!! no metadata, turn on GPS, find address or places.
      * make metadata.
      * ------------------------------------------------------------
      */
@@ -195,50 +202,29 @@ public class ResultActivity extends ActionBarActivity implements
     public void onPlacesTaskFinished(int addressType, PhotoMetaData photoMetaData) {
         mLoadingProgress.dismiss();
         mPhotoMetaData = photoMetaData;
-
         setResultAction(photoMetaData);
-
-        /*switch (addressType) {
-
-            case PhotoMetaData.ADDRESS_FROM_GEOCODE:
-                setResultAction(photoMetaData);
-                break;
-
-            case PhotoMetaData.ADDRESS_FROM_PLACESAPI:
-
-                PlaceListDialogFragment dialogFragment = new PlaceListDialogFragment();
-                dialogFragment.setPlacesList(photoMetaData.getPlacesList());
-                dialogFragment.show(getSupportFragmentManager(), "dialog");
-                break;
-
-            case PhotoMetaData.ADDRESS_NONE:
-                setResultAction(photoMetaData);
-                break;
-
-        }*/
-
     }
 
 
     /**
-     *
      * ------------------------------------------------------------
-     * Third process!! setResultAction
-     * ------------------------------------------------------------
+     * 3.Third process!! setResultAction
      *
+     * highlightMapFromLatLng,
+     *
+     * setImage.
+     * ------------------------------------------------------------
      */
 
     private void setResultAction(PhotoMetaData photoMetaData) {
 
         deleteSavedFile();
 
-        //mCaptureView.setDrawingCacheEnabled(false);
+        ImageFragment imageFragment = (ImageFragment) getSupportFragmentManager().findFragmentById(R.id.container);
+        imageFragment.setImage(photoMetaData);
 
         MarkerMapFragment mapFragment = getMapFragment();
         mapFragment.highlightMapFromLatLng(photoMetaData);
-
-        ImageFragment imageFragment = (ImageFragment) getSupportFragmentManager().findFragmentById(R.id.container);
-        imageFragment.setImage(photoMetaData);
 
         findViewById(R.id.rl_none).setVisibility(View.GONE);
     }
@@ -303,7 +289,6 @@ public class ResultActivity extends ActionBarActivity implements
         } else {
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
-            //PhotoMetaData metaData = new PhotoMetaData();
             mPhotoMetaData.setLatLng(latLng);
 
             PlacesTask placesTask = new PlacesTask(this, this);
@@ -318,7 +303,6 @@ public class ResultActivity extends ActionBarActivity implements
 
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
-        //PhotoMetaData metaData = new PhotoMetaData();
         mPhotoMetaData.setLatLng(latLng);
 
         PlacesTask placesTask = new PlacesTask(this, this);
@@ -385,7 +369,6 @@ public class ResultActivity extends ActionBarActivity implements
                     }
             })
                 .show();
-
     }
 
     private MarkerMapFragment getMapFragment() {

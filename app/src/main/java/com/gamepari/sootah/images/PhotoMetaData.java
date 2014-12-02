@@ -6,6 +6,7 @@ import com.gamepari.sootah.location.Places;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Created by seokceed on 2014-11-23.
@@ -84,16 +85,23 @@ public class PhotoMetaData {
 
     public String getAddressString() {
 
-        String result = "";
+        Locale userLocale = Locale.getDefault();
+        String addressStr = "";
 
-        if (address != null) {
-
-            result += address.getAdminArea() + " " + address.getLocality() + " "
+        if (userLocale.equals(Locale.KOREA)) {
+            addressStr += address.getAdminArea() + " " + address.getLocality() + " "
                     + address.getThoroughfare() + " " + address.getSubThoroughfare();
+        } else {
+            addressStr = address.getLocality() + ", " + addressStr;
+            if (address.getThoroughfare() != null && !address.getThoroughfare().equals("Unnamed Rd")) {
+                addressStr = address.getThoroughfare() + ", " + addressStr;
+                if (address.getSubThoroughfare() != null && !address.getSubThoroughfare().equals("Unnamed Rd")) {
+                    addressStr = address.getSubThoroughfare() + " " + addressStr;
+                }
+            }
         }
 
-        return result;
-
+        return addressStr;
     }
 
     public void clearPlaceData() {

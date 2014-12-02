@@ -1,7 +1,6 @@
 package com.gamepari.sootah;
 
 import android.app.Activity;
-import android.location.Address;
 import android.widget.Toast;
 
 import com.gamepari.sootah.images.PhotoMetaData;
@@ -14,8 +13,6 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-
-import java.util.Locale;
 
 /**
  * Created by seokceed on 2014-11-29.
@@ -77,41 +74,6 @@ public class MarkerMapFragment extends SupportMapFragment implements
 
         Toast.makeText(getActivity(), R.string.drag_pin_plz, Toast.LENGTH_LONG).show();
 
-    }
-
-    private String makeTitleText(Address address) {
-
-        String addrStr = address.getAdminArea();
-
-        String name = address.getFeatureName();
-
-        Locale currentLocale = Locale.getDefault();
-
-        if (currentLocale.equals(Locale.KOREA)) {
-
-            if (address.getLocality() != null) {
-                addrStr += " " + address.getLocality();
-                if (address.getThoroughfare() != null && !address.getThoroughfare().equals("Unnamed Rd")) {
-                    addrStr += " " + address.getThoroughfare();
-                    if (address.getSubThoroughfare() != null && !address.getSubThoroughfare().equals("Unnamed Rd")) {
-                        addrStr += " " + address.getSubThoroughfare();
-                    }
-                }
-            }
-        } else {
-
-            if (address.getLocality() != null) {
-                addrStr = address.getLocality() + ", " + addrStr;
-                if (address.getThoroughfare() != null && !address.getThoroughfare().equals("Unnamed Rd")) {
-                    addrStr = address.getThoroughfare() + ", " + addrStr;
-                    if (address.getSubThoroughfare() != null && !address.getSubThoroughfare().equals("Unnamed Rd")) {
-                        addrStr = address.getSubThoroughfare() + " " + addrStr;
-                    }
-                }
-            }
-
-        }
-        return addrStr;
     }
 
     @Override
