@@ -130,9 +130,10 @@ public class ResultActivity extends ActionBarActivity implements
     @Override
     protected void onDestroy() {
 
-        for (Uri tempFileUri : listTempFileUris) {
+        if (listTempFileUris != null) {
+            for (Uri tempFileUri : listTempFileUris) {
 
-            new File(tempFileUri.getPath()).delete();
+                new File(tempFileUri.getPath()).delete();
 
             /*try {
                 String filePath = PhotoCommonMethods.getFilePathFromURI(this, tempFileUri);
@@ -143,7 +144,11 @@ public class ResultActivity extends ActionBarActivity implements
             } catch (IllegalStateException e) {
                 continue;
             }*/
+            }
+
+
         }
+
 
         super.onDestroy();
     }
