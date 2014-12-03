@@ -32,8 +32,11 @@ public class MarkerMapFragment extends SupportMapFragment implements
     @Override
     public void onStart() {
         super.onStart();
-        getMap().setOnMarkerDragListener(this);
-        getMap().setOnCameraChangeListener((GoogleMap.OnCameraChangeListener) getActivity());
+        if (getMap() != null) {
+            getMap().setOnMarkerDragListener(this);
+            getMap().setOnCameraChangeListener((GoogleMap.OnCameraChangeListener) getActivity());
+        }
+
     }
 
     public void requestSnapShot(GoogleMap.SnapshotReadyCallback snapshotReadyCallback) {

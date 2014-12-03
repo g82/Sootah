@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -340,6 +341,7 @@ public class ResultActivity extends ActionBarActivity implements
                 connectionResult.startResolutionForResult(this, GooglePlayServices.CONNECTION_FAILURE_RESOLUTION_REQUEST);
             } catch (IntentSender.SendIntentException e) {
                 e.printStackTrace();
+                Log.d("onConnectionFailed", e.getMessage());
             }
         } else {
             GooglePlayServices.showErrorDialog(this, connectionResult.getErrorCode());
