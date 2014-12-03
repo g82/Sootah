@@ -1,8 +1,8 @@
 package com.gamepari.sootah.images;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
-import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -26,15 +26,11 @@ public class CaptureBitmapTask extends AsyncTask<Object, Integer, File> {
 
     private void connectMediaScan(final String filePath) {
 
-        MediaScannerConnection.scanFile(mContext,
-                new String[]{filePath,}, new String[]{"image/jpg",},
-                new MediaScannerConnection.OnScanCompletedListener() {
-                    @Override
-                    public void onScanCompleted(String s, Uri uri) {
-                        Log.d(this.toString(), s);
-                    }
-                });
-
+        Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        File f = new File(filePath);
+        Uri contentUri = Uri.fromFile(f);
+        mediaScanIntent.setData(contentUri);
+        mContext.sendBroadcast(mediaScanIntent);
     }
 
     @Override

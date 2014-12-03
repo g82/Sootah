@@ -40,27 +40,21 @@ public class MetaDataTask extends AsyncTask<Object, Integer, PhotoMetaData> {
         int requestCode = (Integer) (objects[0]);
         Intent data = (Intent) objects[1];
 
-        LatLng latLng = null;
+        metaData = PhotoCommonMethods.getMetaDataFromURI(mContext, requestCode, data);
 
-        try {
-            metaData = PhotoCommonMethods.getMetaDataFromURI(mContext, requestCode, data);
+        if (metaData == null) return null;
 
-            latLng = metaData.getLatLng();
+        LatLng latLng = metaData.getLatLng();
 
-            if (latLng != null) {
-                //more insert place data.
+        if (latLng != null) {
+            //more insert place data.
 
-                Address address = GeoCodingTask.getAddressFromLocation(mContext, latLng);
+            Address address = GeoCodingTask.getAddressFromLocation(mContext, latLng);
 
-                if (address != null) {
-                    metaData.setAddress(address);
+            if (address != null) {
+                metaData.setAddress(address);
 
-                }
             }
-
-        } catch (IllegalStateException e) {
-            //camera photo not exist.
-            return null;
         }
 
         return metaData;

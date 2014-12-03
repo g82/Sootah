@@ -5,11 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -18,8 +20,12 @@ import com.gamepari.sootah.R;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -34,11 +40,13 @@ public class PhotoCommonMethods {
 
     public static final int MEDIA_TYPE_IMAGE = 20001;
     public static final int MEDIA_TYPE_VIDEO = 20002;
+    public static final int MEDIA_TYPE_TEMP = 20003;
 
     private static final String PREFIX = "Sootah_";
+    private static final String TEMP_PREFIX = "TEMP_";
     private static final String DIRECTORY_NAME = "Sootah";
 
-    public static Uri CAMERA_URI = Uri.EMPTY;
+    public static Uri CAMERA_URI = null;
 
     /*
     gallery
@@ -57,7 +65,7 @@ public class PhotoCommonMethods {
 
     public static void photoFromCamera(Activity activity) {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        CAMERA_URI = getOutputMediaFileUri(MEDIA_TYPE_IMAGE);
+        CAMERA_URI = getOutputMediaFileUri(MEDIA_TYPE_TEMP);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, CAMERA_URI);
         activity.startActivityForResult(intent, REQ_CAMERA);
     }
@@ -69,6 +77,29 @@ public class PhotoCommonMethods {
         shareIntent.putExtra(Intent.EXTRA_TEXT, photoMetaData.convertAddressString());
         shareIntent.setType("image/*");
         activity.startActivity(Intent.createChooser(shareIntent, activity.getString(R.string.share)));
+    }
+
+    public static void clearTempFiles() {
+
+        File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), DIRECTORY_NAME);
+
+        if (mediaStorageDir.isDirectory()) {
+            FilenameFilter filenameFilter = new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String filename) {
+                    if (filename.startsWith(TEMP_PREFIX)) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+            };
+            File[] tempFiles = mediaStorageDir.listFiles(filenameFilter);
+            for (File tempFile : tempFiles) {
+                Log.d("clearTempFiles", tempFile.getName());
+                tempFile.delete();
+            }
+        }
     }
 
     /**
@@ -104,6 +135,8 @@ public class PhotoCommonMethods {
         File mediaFile;
         if (type == MEDIA_TYPE_IMAGE) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".jpg");
+        } else if (type == MEDIA_TYPE_TEMP) {
+            mediaFile = new File(mediaStorageDir.getPath() + File.separator + TEMP_PREFIX + timeStamp + ".jpg");
         } else if (type == MEDIA_TYPE_VIDEO) {
             mediaFile = new File(mediaStorageDir.getPath() + File.separator + PREFIX + timeStamp + ".mp4");
         } else {
@@ -113,16 +146,64 @@ public class PhotoCommonMethods {
         return mediaFile;
     }
 
-    public static String getFilePathFromURI(Context context, Uri uri) throws IllegalStateException {
+    public static void copyStream(InputStream inputStream, OutputStream outputStream) throws IOException {
+
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+
+        while ((bytesRead = inputStream.read(buffer)) != -1) {
+            outputStream.write(buffer, 0, bytesRead);
+        }
+        inputStream.close();
+        outputStream.flush();
+        outputStream.close();
+    }
+
+    public static String getFilePathUsingCursor(Context context, Uri uri) {
+
+
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
+        String filePath = null;
+
         if (cursor != null && cursor.moveToFirst()) {
-            String filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
+
+            try {
+                filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
+            } catch (IllegalArgumentException e) {
+                Log.d("getFilePathUsingCursor", e.getMessage());
+            }
             cursor.close();
-            return filePath;
-        } else {
-            throw new IllegalStateException("Column does not exist.");
         }
+
+        return filePath;
+    }
+
+    public static String getFilePathFromURI(Context context, Uri uri) {
+
+        try {
+            ParcelFileDescriptor descriptor = context.getContentResolver().openFileDescriptor(uri, "r");
+            Bitmap tempBitmap = BitmapFactory.decodeFileDescriptor(descriptor.getFileDescriptor());
+
+            File tempFile = PhotoCommonMethods.getOutputMediaFile(MEDIA_TYPE_TEMP);
+
+            if (tempBitmap != null) {
+                FileOutputStream fos = new FileOutputStream(tempFile);
+                tempBitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+                fos.close();
+                return tempFile.getPath();
+            } else {
+                return null;
+            }
+        } catch (FileNotFoundException e) {
+
+            String path = getFilePathUsingCursor(context, uri);
+            return path;
+
+        } catch (IOException e) {
+            return null;
+        }
+
     }
 
     public static boolean setMetaDataToFile(File bitmapFile, PhotoMetaData photoMetaData) {
@@ -171,19 +252,24 @@ public class PhotoCommonMethods {
         PhotoMetaData photoMetaData = new PhotoMetaData();
         String filePath = null;
 
-        if (imageData == null) {
+        if (imageData == null && CAMERA_URI != null) {
             filePath = PhotoCommonMethods.CAMERA_URI.getPath();
-        } else {
-            if (imageData.getDataString().contains("content://")) {
+        } else if (imageData != null) {
+
+            String dataUriStr = imageData.getDataString();
+
+            Log.d("ReceivedURI", dataUriStr);
+
+            if (dataUriStr.startsWith("file://")) {
+                //file type Camera, dropbox... ndrive, daumcloud
+                filePath = imageData.getData().getPath();
+            } else if (dataUriStr.startsWith("content://")) {
+                //content type default gallery, photo,...
                 filePath = getFilePathFromURI(context, imageData.getData());
-            } else {
-                filePath = imageData.getDataString();
             }
         }
 
-
-//        if (requestCode == REQ_CAMERA) filePath = CAMERA_URI.getPath();
-//        else if (requestCode == REQ_GALLERY) filePath = getFilePathFromURI(context, imageData.getData());
+        if (filePath == null) return null;
 
         photoMetaData.setFilePath(filePath);
 
@@ -283,6 +369,5 @@ public class PhotoCommonMethods {
 
         return rotatedBitmap;
     }
-
 
 }

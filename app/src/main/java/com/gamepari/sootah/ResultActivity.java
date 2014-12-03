@@ -35,8 +35,6 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 
 public class ResultActivity extends ActionBarActivity implements
@@ -53,7 +51,7 @@ public class ResultActivity extends ActionBarActivity implements
     private PhotoMetaData mPhotoMetaData;
     private Uri savedUri = null;
 
-    private List<Uri> listTempFileUris;
+
     /**
      * location changed by user, so rerun geocoding. ->2
      */
@@ -129,27 +127,7 @@ public class ResultActivity extends ActionBarActivity implements
 
     @Override
     protected void onDestroy() {
-
-        if (listTempFileUris != null) {
-            for (Uri tempFileUri : listTempFileUris) {
-
-                new File(tempFileUri.getPath()).delete();
-
-            /*try {
-                String filePath = PhotoCommonMethods.getFilePathFromURI(this, tempFileUri);
-                if (filePath!=null) {
-                    new File(filePath).delete();
-                }
-
-            } catch (IllegalStateException e) {
-                continue;
-            }*/
-            }
-
-
-        }
-
-
+        PhotoCommonMethods.clearTempFiles();
         super.onDestroy();
     }
 
@@ -157,11 +135,6 @@ public class ResultActivity extends ActionBarActivity implements
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         if (requestCode == PhotoCommonMethods.REQ_CAMERA || requestCode == PhotoCommonMethods.REQ_GALLERY) {
-
-            if (requestCode == PhotoCommonMethods.REQ_CAMERA) {
-                if (listTempFileUris == null) listTempFileUris = new ArrayList<>();
-                listTempFileUris.add(PhotoCommonMethods.CAMERA_URI);
-            }
 
             if (resultCode == RESULT_OK) {
 
@@ -208,6 +181,7 @@ public class ResultActivity extends ActionBarActivity implements
 
         if (photoMetaData == null) {
             //TODO get Image Failed.
+            Toast.makeText(this, "Get Imaged Failed.", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -397,6 +371,7 @@ public class ResultActivity extends ActionBarActivity implements
                         }
                     }
                 })
+                .setCancelable(false)
                 .show();
     }
 
@@ -414,7 +389,8 @@ public class ResultActivity extends ActionBarActivity implements
                         startActivityForResult(i, REQ_SETTINGS_GPS);
 
                     }
-            })
+                })
+                .setCancelable(false)
                 .show();
     }
 

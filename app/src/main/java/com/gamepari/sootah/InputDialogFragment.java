@@ -59,6 +59,7 @@ public class InputDialogFragment extends DialogFragment {
         etAddress.setText(metaData.convertAddressString());
 
         builder.setView(v);
+        builder.setCancelable(false);
 
         return builder.create();
     }
