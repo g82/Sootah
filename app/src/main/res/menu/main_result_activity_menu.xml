@@ -3,18 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item android:id="@+id/action_camera"
-        android:title="@string/camera"
         android:icon="@drawable/ic_action_camera"
+        android:title="@string/camera"
         app:showAsAction="ifRoom"/>
 
     <item android:id="@+id/action_gallery"
-        android:title="@string/album"
         android:icon="@drawable/ic_action_picture"
+        android:title="@string/album"
         app:showAsAction="ifRoom"/>
 
     <item android:id="@+id/action_share"
-        android:title="@string/share"
         android:icon="@drawable/ic_action_share"
-        app:showAsAction="ifRoom"/>
+        android:title="@string/share"
+        android:visible="false"
+        app:showAsAction="always" />
 
 </menu>

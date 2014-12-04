@@ -20,6 +20,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.gamepari.sootah.ad.LocaleAd;
+import com.gamepari.sootah.ad.OnActivityListener;
 import com.gamepari.sootah.googleplay.GooglePlayServices;
 import com.gamepari.sootah.images.CaptureBitmapTask;
 import com.gamepari.sootah.images.MetaDataTask;
@@ -36,6 +38,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.File;
+import java.util.Locale;
 
 
 public class ResultActivity extends ActionBarActivity implements
@@ -51,6 +54,12 @@ public class ResultActivity extends ActionBarActivity implements
     private ProgressDialog mLoadingProgress;
     private PhotoMetaData mPhotoMetaData;
     private Uri savedUri = null;
+
+    private LocaleAd localeAd;
+
+    private OnActivityListener onActivityListener;
+
+    private Menu mActionBarMenu;
 
 
     /**
@@ -93,12 +102,16 @@ public class ResultActivity extends ActionBarActivity implements
         mLoadingProgress = new ProgressDialog(this);
         mLoadingProgress.setMessage(getString(R.string.loading));
 
+        localeAd = new LocaleAd(this, Locale.getDefault(), LocaleAd.AD_FULLSCREEN);
+        onActivityListener = localeAd;
     }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
         menuInflater.inflate(R.menu.main_result_activity_menu, menu);
+        mActionBarMenu = menu;
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -118,6 +131,12 @@ public class ResultActivity extends ActionBarActivity implements
                 break;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (onActivityListener != null) onActivityListener.onActivityResume();
     }
 
     @Override
@@ -158,7 +177,14 @@ public class ResultActivity extends ActionBarActivity implements
             if (resultCode == RESULT_OK) {
                 // Try the request again.
             }
+        } else if (requestCode == PhotoCommonMethods.REQ_SHOWAD) {
+            Log.d("onActivityResult", "showFullScreenAd");
+            showAd();
         }
+    }
+
+    private void showAd() {
+        localeAd.showFullScreenAd();
     }
 
     /**
@@ -256,6 +282,10 @@ public class ResultActivity extends ActionBarActivity implements
         mapFragment.highlightMap(photoMetaData);
 
         findViewById(R.id.rl_none).setVisibility(View.GONE);
+
+        MenuItem shareItem = mActionBarMenu.findItem(R.id.action_share);
+
+        if (!shareItem.isVisible()) shareItem.setVisible(true);
     }
 
     // google map camera changed, savedUri = null.

@@ -2,7 +2,11 @@
 <resources>
 
     <string name="app_name">It\'s Here</string>
+
     <string name="google_maps_api_key_debug" translatable="false">AIzaSyCPg-IE7BRkZyCRJP1R264JfSV3IijXsw0</string>
+    <string name="admob_insert_key" translatable="false">ca-app-pub-6398997334263111/3717336982</string>
+    <string name="admob_banner_key" translatable="false">ca-app-pub-6398997334263111/3019332989</string>
+    <string name="cauly_key" translatable="false">PY4qGmJk</string>
 
     <string name="location_disabled">Location services disabled</string>
     <string name="location_disalbed_text">Sootah needs access to your location. Please turn on location access.</string>
@@ -37,5 +41,6 @@
     <string name="inputdialog_hint_address">Put the address.</string>
 
     <string name="saved_album">Image saved.</string>
+    <string name="question_app_finish">Do you want finsh ad?</string>
 
 </resources>

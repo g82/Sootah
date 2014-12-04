@@ -37,6 +37,7 @@ public class PhotoCommonMethods {
 
     public static final int REQ_GALLERY = 10000;
     public static final int REQ_CAMERA = 10100;
+    public static final int REQ_SHOWAD = 10534;
 
     public static final int MEDIA_TYPE_IMAGE = 20001;
     public static final int MEDIA_TYPE_VIDEO = 20002;
@@ -76,7 +77,7 @@ public class PhotoCommonMethods {
         shareIntent.putExtra(Intent.EXTRA_STREAM, fileUri);
         shareIntent.putExtra(Intent.EXTRA_TEXT, photoMetaData.convertAddressString());
         shareIntent.setType("image/*");
-        activity.startActivity(Intent.createChooser(shareIntent, activity.getString(R.string.share)));
+        activity.startActivityForResult(Intent.createChooser(shareIntent, activity.getString(R.string.share)), REQ_SHOWAD);
     }
 
     public static void clearTempFiles() {

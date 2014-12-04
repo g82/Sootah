@@ -26,4 +26,6 @@
     <string name="inputdialog_hint_place">장소 이름을 입력하세요.</string>
     <string name="saved_album">이미지가 저장되었습니다.</string>
 
+    <string name="question_app_finish">광고를 종료하실래요?</string>
+
 </resources>
