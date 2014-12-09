@@ -1,6 +1,9 @@
 Sootah
 ======
-android project
+'Its here' is android & ios app.
+
+'Sootah' is android project codename.
+
 
 LICENSE
 =======

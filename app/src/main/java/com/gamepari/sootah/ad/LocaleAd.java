@@ -153,7 +153,7 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
 
     @Override
     public void onRightClicked(CaulyCloseAd caulyCloseAd) {
-        mActivity.finish();
+//        mActivity.finish();
     }
 
     @Override
