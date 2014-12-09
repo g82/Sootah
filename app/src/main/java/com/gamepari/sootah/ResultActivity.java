@@ -30,9 +30,10 @@ import com.gamepari.sootah.images.PhotoMetaData;
 import com.gamepari.sootah.location.GeoCodingTask;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
-import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
@@ -43,13 +44,17 @@ import java.util.Locale;
 
 public class ResultActivity extends ActionBarActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
-        GooglePlayServicesClient.OnConnectionFailedListener, LocationListener,
+        GooglePlayServicesClient.OnConnectionFailedListener,
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+        LocationListener,
         GoogleMap.OnCameraChangeListener, MarkerMapFragment.MarkerDragListener,
         GeoCodingTask.OnPlaceTaskListener, CaptureBitmapTask.OnSaveListener, MetaDataTask.OnMetaTaskListener,
         InputDialogFragment.InputDialogListener {
 
     private static final int REQ_SETTINGS_GPS = 1233;
-    private LocationClient mLocationClient;
+
+    private GoogleApiClient googleApiClient;
+
     private View mCaptureView;
     private ProgressDialog mLoadingProgress;
     private PhotoMetaData mPhotoMetaData;
@@ -141,7 +146,7 @@ public class ResultActivity extends ActionBarActivity implements
 
     @Override
     protected void onStop() {
-        if (mLocationClient != null) mLocationClient.disconnect();
+        if (googleApiClient != null) googleApiClient.disconnect();
         super.onStop();
     }
 
@@ -246,9 +251,9 @@ public class ResultActivity extends ActionBarActivity implements
     /**
      * ------------------------------------------------------------
      * 3.Third process!! showInputDialogFragment
-     *
+     * <p/>
      * highlightMap,
-     *
+     * <p/>
      * setImageAndText.
      * ------------------------------------------------------------
      */
@@ -316,15 +321,21 @@ public class ResultActivity extends ActionBarActivity implements
     private void initLocationClient() {
 
         mLoadingProgress.show();
-        mLocationClient = new LocationClient(this, this, this);
-        mLocationClient.connect();
+
+        if (googleApiClient == null) {
+            googleApiClient = new GoogleApiClient.Builder(this, this, this)
+                    .addApi(LocationServices.API)
+                    .build();
+        }
+
+        googleApiClient.connect();
 
     }
 
     @Override
     public void onConnected(Bundle bundle) {
 
-        Location location = mLocationClient.getLastLocation();
+        Location location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
 
         if (location == null) {
             //keep going loading...
@@ -334,7 +345,8 @@ public class ResultActivity extends ActionBarActivity implements
             locationRequest.setInterval(5000);
             locationRequest.setFastestInterval(1000);
 
-            mLocationClient.requestLocationUpdates(locationRequest, this);
+            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+
         } else {
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
@@ -345,25 +357,18 @@ public class ResultActivity extends ActionBarActivity implements
         }
     }
 
-    public PhotoMetaData getPhotoMetaData() {
-        return mPhotoMetaData;
+    @Override
+    public void onConnectionSuspended(int i) {
+
     }
 
     @Override
-    public void onLocationChanged(Location location) {
-        mLocationClient.removeLocationUpdates(this);
-
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-
-        mPhotoMetaData.setLatLng(latLng);
-
-        GeoCodingTask geoCodingTask = new GeoCodingTask(this, this);
-        geoCodingTask.execute(mPhotoMetaData);
+    public void onDisconnected() {
+        Toast.makeText(this, "Disconnected. Please re-connect.", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-
         mLoadingProgress.dismiss();
 
         if (connectionResult.hasResolution()) {
@@ -379,9 +384,23 @@ public class ResultActivity extends ActionBarActivity implements
     }
 
     @Override
-    public void onDisconnected() {
-        Toast.makeText(this, "Disconnected. Please re-connect.", Toast.LENGTH_SHORT).show();
+    public void onLocationChanged(Location location) {
+
+        LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+
+        mPhotoMetaData.setLatLng(latLng);
+
+        GeoCodingTask geoCodingTask = new GeoCodingTask(this, this);
+        geoCodingTask.execute(mPhotoMetaData);
     }
+
+
+    /*
+    END OF Google Api CallBacks
+    ================================================================================
+     */
 
     private void showDialogSetLocation() {
         new AlertDialog.Builder(this)
@@ -426,17 +445,19 @@ public class ResultActivity extends ActionBarActivity implements
                 .show();
     }
 
+    public PhotoMetaData getPhotoMetaData() {
+        return mPhotoMetaData;
+    }
+
     private MarkerMapFragment getMapFragment() {
         MarkerMapFragment markerMapFragment = (MarkerMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         return markerMapFragment;
     }
 
     /**
-     *
      * ------------------------------------------------------------
      * Capture ImageView & MapView, and Composing, Write File.
      * ------------------------------------------------------------
-     *
      */
 
     private void saveAndShare() {

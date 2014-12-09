@@ -21,7 +21,6 @@ public class MarkerMapFragment extends SupportMapFragment implements
     private Marker marker;
     private MarkerDragListener markerDragListener;
 
-    private boolean isUserMarkerDraged = false;
 
     @Override
     public void onAttach(Activity activity) {

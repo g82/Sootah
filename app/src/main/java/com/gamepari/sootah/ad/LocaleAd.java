@@ -52,6 +52,7 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
                 mCaulyCloseAd.setAdInfo(caulyAdInfo);
                 mCaulyCloseAd.setDescriptionText(activity.getString(R.string.question_app_finish));
                 mCaulyCloseAd.setCloseAdListener(this);
+                mCaulyCloseAd.disableBackKey();
 
             } else if (adType == AD_BANNER) {
 
@@ -76,7 +77,6 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
                 mInterstitialAd.setAdUnitId(activity.getString(R.string.admob_insert_key));
                 mInterstitialAd.loadAd(adRequest);
             } else if (adType == AD_BANNER) {
-
                 mAdView = new AdView(mActivity);
                 mAdView.setAdUnitId(activity.getString(R.string.admob_banner_key));
                 mAdView.setAdSize(AdSize.SMART_BANNER);
@@ -153,7 +153,6 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
 
     @Override
     public void onRightClicked(CaulyCloseAd caulyCloseAd) {
-//        mActivity.finish();
     }
 
     @Override
