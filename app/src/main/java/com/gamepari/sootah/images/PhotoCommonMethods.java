@@ -160,8 +160,7 @@ public class PhotoCommonMethods {
         outputStream.close();
     }
 
-    public static String getFilePathUsingCursor(Context context, Uri uri) {
-
+    public static String getFilePathUsingCursor(Context context, Uri uri) throws IllegalStateException {
 
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
@@ -169,20 +168,17 @@ public class PhotoCommonMethods {
 
         if (cursor != null && cursor.moveToFirst()) {
 
-            try {
-                filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
-            } catch (IllegalArgumentException e) {
-                Log.d("getFilePathUsingCursor", e.getMessage());
-            }
+            filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
             cursor.close();
         }
 
         return filePath;
     }
 
-    public static String getFilePathFromURI(Context context, Uri uri) {
+    public static String createTempFileFromURI(Context context, Uri uri) {
 
         try {
+            //because some photo stored google photo cloud.
             ParcelFileDescriptor descriptor = context.getContentResolver().openFileDescriptor(uri, "r");
             Bitmap tempBitmap = BitmapFactory.decodeFileDescriptor(descriptor.getFileDescriptor());
 
@@ -197,10 +193,7 @@ public class PhotoCommonMethods {
                 return null;
             }
         } catch (FileNotFoundException e) {
-
-            String path = getFilePathUsingCursor(context, uri);
-            return path;
-
+            return null;
         } catch (IOException e) {
             return null;
         }
@@ -248,7 +241,7 @@ public class PhotoCommonMethods {
     }
 
 
-    public static PhotoMetaData getMetaDataFromURI(Context context, int requestCode, Intent imageData) throws IllegalStateException {
+    public static PhotoMetaData getMetaDataFromURI(Context context, int requestCode, Intent imageData) {
 
         PhotoMetaData photoMetaData = new PhotoMetaData();
         String filePath = null;
@@ -266,7 +259,18 @@ public class PhotoCommonMethods {
                 filePath = imageData.getData().getPath();
             } else if (dataUriStr.startsWith("content://")) {
                 //content type default gallery, photo,...
-                filePath = getFilePathFromURI(context, imageData.getData());
+                try {
+                    //get photo from local sdcard.
+                    filePath = getFilePathUsingCursor(context, imageData.getData());
+
+                    if (filePath == null || filePath.equals("")) {
+                        filePath = createTempFileFromURI(context, imageData.getData());
+                    }
+
+                } catch (IllegalStateException e) {
+                    //some photos stored google photo cloud.
+                    filePath = createTempFileFromURI(context, imageData.getData());
+                }
             }
         }
 

@@ -1,6 +1,8 @@
 package com.gamepari.sootah;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.view.View;
@@ -14,7 +16,7 @@ import java.util.Locale;
 /**
  * Created by seokceed on 2014-11-30.
  */
-public class SelectActivity extends ActionBarActivity implements View.OnClickListener{
+public class SelectActivity extends ActionBarActivity implements View.OnClickListener {
 
     private OnActivityListener onActivityListener;
 
@@ -23,6 +25,8 @@ public class SelectActivity extends ActionBarActivity implements View.OnClickLis
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select);
+
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#DE5553")));
 
         findViewById(R.id.select_album).setOnClickListener(this);
         findViewById(R.id.select_camera).setOnClickListener(this);

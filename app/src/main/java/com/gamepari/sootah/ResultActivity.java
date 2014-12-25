@@ -7,6 +7,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -102,6 +104,8 @@ public class ResultActivity extends ActionBarActivity implements
 
         }
 
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#DE5553")));
+
         mCaptureView = findViewById(R.id.capture_area);
 
         mLoadingProgress = new ProgressDialog(this);
@@ -109,6 +113,12 @@ public class ResultActivity extends ActionBarActivity implements
 
         localeAd = new LocaleAd(this, Locale.getDefault(), LocaleAd.AD_FULLSCREEN);
         onActivityListener = localeAd;
+
+//        getSupportActionBar().setHomeButtonEnabled(true);
+//        getSupportActionBar().setDisplayUseLogoEnabled(true);
+//        getSupportActionBar().setLogo(R.drawable.ic_launcher);
+
+
     }
 
 
