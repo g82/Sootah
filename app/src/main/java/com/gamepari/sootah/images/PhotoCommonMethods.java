@@ -15,6 +15,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.gamepari.sootah.R;
 import com.google.android.gms.maps.model.LatLng;
@@ -43,9 +44,9 @@ public class PhotoCommonMethods {
     public static final int MEDIA_TYPE_VIDEO = 20002;
     public static final int MEDIA_TYPE_TEMP = 20003;
 
-    private static final String PREFIX = "Sootah_";
+    private static final String PREFIX = "ITS_HERE_";
     private static final String TEMP_PREFIX = "TEMP_";
-    private static final String DIRECTORY_NAME = "Sootah";
+    private static final String DIRECTORY_NAME = "ITS_HERE";
 
     public static Uri CAMERA_URI = null;
 
@@ -65,6 +66,9 @@ public class PhotoCommonMethods {
     }
 
     public static void photoFromCamera(Activity activity) {
+
+        Toast.makeText(activity, R.string.plz_on_location_tag, Toast.LENGTH_LONG).show();
+
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         CAMERA_URI = getOutputMediaFileUri(MEDIA_TYPE_TEMP);
         intent.putExtra(MediaStore.EXTRA_OUTPUT, CAMERA_URI);
@@ -160,7 +164,7 @@ public class PhotoCommonMethods {
         outputStream.close();
     }
 
-    public static String getFilePathUsingCursor(Context context, Uri uri) throws IllegalStateException {
+    public static String getFilePathUsingCursor(Context context, Uri uri) throws IllegalArgumentException {
 
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
 
@@ -168,8 +172,16 @@ public class PhotoCommonMethods {
 
         if (cursor != null && cursor.moveToFirst()) {
 
-            filePath = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
-            cursor.close();
+            int column;
+
+            try {
+                column = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                filePath = cursor.getString(column);
+            } catch (IllegalArgumentException e) {
+                throw e;
+            } finally {
+                cursor.close();
+            }
         }
 
         return filePath;
@@ -267,7 +279,7 @@ public class PhotoCommonMethods {
                         filePath = createTempFileFromURI(context, imageData.getData());
                     }
 
-                } catch (IllegalStateException e) {
+                } catch (IllegalArgumentException e) {
                     //some photos stored google photo cloud.
                     filePath = createTempFileFromURI(context, imageData.getData());
                 }

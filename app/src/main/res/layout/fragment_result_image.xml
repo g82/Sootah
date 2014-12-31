@@ -44,5 +44,29 @@
         android:layout_marginRight="100dp"
         android:src="@drawable/triangle" />
 
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="@dimen/short_margin"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_launcher" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_marginLeft="@dimen/short_margin"
+            android:layout_marginRight="@dimen/short_margin"
+            android:text="@string/app_name"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
 
 </RelativeLayout>

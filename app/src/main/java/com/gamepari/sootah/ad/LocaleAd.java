@@ -5,11 +5,6 @@ import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.fsn.cauly.CaulyAdInfo;
-import com.fsn.cauly.CaulyAdInfoBuilder;
-import com.fsn.cauly.CaulyAdView;
-import com.fsn.cauly.CaulyCloseAd;
-import com.fsn.cauly.CaulyCloseAdListener;
 import com.gamepari.sootah.R;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
@@ -21,7 +16,7 @@ import java.util.Locale;
 /**
  * Created by seokceed on 2014-12-04.
  */
-public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
+public class LocaleAd implements OnActivityListener {
 
     public static final int AD_FULLSCREEN = 324312;
     public static final int AD_BANNER = 345432;
@@ -30,9 +25,8 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
     Locale userLocale;
     Activity mActivity;
 
-    private CaulyCloseAd mCaulyCloseAd;
-    private CaulyAdView mCaulyAdView;
-
+//    private CaulyCloseAd mCaulyCloseAd;
+//    private CaulyAdView mCaulyAdView;
 
     private InterstitialAd mInterstitialAd;
     private AdView mAdView;
@@ -43,6 +37,8 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
         mActivity = activity;
 
         if (userLocale.equals(Locale.KOREA)) {
+
+            /*
             CaulyAdInfo caulyAdInfo = new CaulyAdInfoBuilder(activity.getString(R.string.cauly_key))
                     .allowcall(false)
                     .build();
@@ -64,6 +60,26 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
                 FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                         Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
                 mCaulyAdView.setLayoutParams(params);
+            }*/
+
+            AdRequest adRequest = new AdRequest.Builder()
+                    .build();
+
+            if (adType == AD_FULLSCREEN) {
+                mInterstitialAd = new InterstitialAd(activity);
+                mInterstitialAd.setAdUnitId(activity.getString(R.string.admob_insert_key));
+                mInterstitialAd.loadAd(adRequest);
+            } else if (adType == AD_BANNER) {
+                mAdView = new AdView(mActivity);
+                mAdView.setAdUnitId(activity.getString(R.string.admob_banner_key));
+                mAdView.setAdSize(AdSize.SMART_BANNER);
+                FrameLayout frameLayout = (FrameLayout) activity.findViewById(R.id.fl_select_main);
+                frameLayout.addView(mAdView);
+
+                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                        Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+                mAdView.setLayoutParams(params);
+                mAdView.loadAd(adRequest);
             }
 
 
@@ -97,9 +113,13 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
 
         if (userLocale.equals(Locale.KOREA)) {
 
-            if (mCaulyCloseAd.isModuleLoaded()) {
-                mCaulyCloseAd.show(mActivity);
+            if (mInterstitialAd.isLoaded()) {
+                mInterstitialAd.show();
             }
+
+//            if (mCaulyCloseAd.isModuleLoaded()) {
+//                mCaulyCloseAd.show(mActivity);
+//            }
         } else {
 
             if (mInterstitialAd.isLoaded()) {
@@ -128,13 +148,17 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
 
     @Override
     public void onActivityResume() {
-        if (mCaulyCloseAd != null) {
-            mCaulyCloseAd.resume(mActivity);
-        } else if (mAdView != null) {
-            mAdView.resume();
-        }
+
+        if (mAdView != null) mAdView.resume();
+
+//        if (mCaulyCloseAd != null) {
+//            mCaulyCloseAd.resume(mActivity);
+//        } else if (mAdView != null) {
+//            mAdView.resume();
+//        }
     }
 
+    /*
     @Override
     public void onReceiveCloseAd(CaulyCloseAd caulyCloseAd, boolean b) {
     }
@@ -158,4 +182,5 @@ public class LocaleAd implements OnActivityListener, CaulyCloseAdListener {
     @Override
     public void onLeaveCloseAd(CaulyCloseAd caulyCloseAd) {
     }
+    */
 }

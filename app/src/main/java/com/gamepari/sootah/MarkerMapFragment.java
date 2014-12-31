@@ -1,6 +1,7 @@
 package com.gamepari.sootah;
 
 import android.app.Activity;
+import android.widget.Toast;
 
 import com.gamepari.sootah.images.PhotoMetaData;
 import com.google.android.gms.maps.CameraUpdate;
@@ -16,24 +17,30 @@ import com.google.android.gms.maps.model.MarkerOptions;
  * Created by seokceed on 2014-11-29.
  */
 public class MarkerMapFragment extends SupportMapFragment implements
-        GoogleMap.OnMarkerDragListener {
+        GoogleMap.OnMapLongClickListener, GoogleMap.OnMapLoadedCallback {
 
     private Marker marker;
-    private MarkerDragListener markerDragListener;
+    private MapLongClickedListener mapLongClickListener;
 
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        markerDragListener = (MarkerDragListener) activity;
+        mapLongClickListener = (MapLongClickedListener) activity;
+    }
+
+    @Override
+    public void onMapLoaded() {
+        Toast.makeText(getActivity(), R.string.pin_move, Toast.LENGTH_LONG).show();
     }
 
     @Override
     public void onStart() {
         super.onStart();
         if (getMap() != null) {
-            getMap().setOnMarkerDragListener(this);
+            getMap().setOnMapLongClickListener(this);
             getMap().setOnCameraChangeListener((GoogleMap.OnCameraChangeListener) getActivity());
+            getMap().setOnMapLoadedCallback(this);
         }
 
     }
@@ -74,6 +81,12 @@ public class MarkerMapFragment extends SupportMapFragment implements
     }
 
     @Override
+    public void onMapLongClick(LatLng latLng) {
+        mapLongClickListener.onMarkerPositionChanged(latLng);
+    }
+
+    /*
+    @Override
     public void onMarkerDragStart(Marker marker) {
     }
 
@@ -84,10 +97,11 @@ public class MarkerMapFragment extends SupportMapFragment implements
     @Override
     public void onMarkerDragEnd(final Marker marker) {
 
-        markerDragListener.onMarkerPositionChanged(marker.getPosition());
+        //mapLongClickListener.onMarkerPositionChanged(marker.getPosition());
     }
+    */
 
-    public interface MarkerDragListener {
+    public interface MapLongClickedListener {
 
         public void onMarkerPositionChanged(LatLng latLng);
 

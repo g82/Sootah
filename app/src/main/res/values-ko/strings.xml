@@ -28,4 +28,7 @@
 
     <string name="question_app_finish">광고를 종료하실래요?</string>
 
+    <string name="plz_on_location_tag">카메라에서 위치 태그 기능을 꼭 켜세요.</string>
+    <string name="pin_move">원하는 장소를 길게 누르면 변경됩니다.</string>
+
 </resources>

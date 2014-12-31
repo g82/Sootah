@@ -49,7 +49,7 @@ public class ResultActivity extends ActionBarActivity implements
         GooglePlayServicesClient.OnConnectionFailedListener,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
-        GoogleMap.OnCameraChangeListener, MarkerMapFragment.MarkerDragListener,
+        GoogleMap.OnCameraChangeListener, MarkerMapFragment.MapLongClickedListener,
         GeoCodingTask.OnPlaceTaskListener, CaptureBitmapTask.OnSaveListener, MetaDataTask.OnMetaTaskListener,
         InputDialogFragment.InputDialogListener {
 
@@ -113,11 +113,6 @@ public class ResultActivity extends ActionBarActivity implements
 
         localeAd = new LocaleAd(this, Locale.getDefault(), LocaleAd.AD_FULLSCREEN);
         onActivityListener = localeAd;
-
-//        getSupportActionBar().setHomeButtonEnabled(true);
-//        getSupportActionBar().setDisplayUseLogoEnabled(true);
-//        getSupportActionBar().setLogo(R.drawable.ic_launcher);
-
 
     }
 
@@ -301,6 +296,8 @@ public class ResultActivity extends ActionBarActivity implements
         MenuItem shareItem = mActionBarMenu.findItem(R.id.action_share);
 
         if (!shareItem.isVisible()) shareItem.setVisible(true);
+
+
     }
 
     // google map camera changed, savedUri = null.

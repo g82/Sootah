@@ -42,5 +42,7 @@
 
     <string name="saved_album">Image saved.</string>
     <string name="question_app_finish">Do you want finsh ad?</string>
+    <string name="plz_on_location_tag">Please turn on Location Tag.</string>
+    <string name="pin_move">Press and hold the desired place will change.</string>
 
 </resources>
